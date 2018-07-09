@@ -374,7 +374,7 @@ class ResizeCluster(AbstractCommand):
                                      sample_node.security_group,
                                      image_userdata=sample_node.image_userdata,
                                      **sample_node.extra)
-            else:
+            else:       
                 conf = creator.cluster_conf[template]
                 conf_kind = conf['nodes'][grp]
 
@@ -389,6 +389,7 @@ class ResizeCluster(AbstractCommand):
                 extra.pop('availability_zone')
 
                 for i in range(self.params.nodes_to_add[grp]):
+                    
                     cluster.add_node(grp,
                                      conf_kind['image_id'],
                                      image_user,

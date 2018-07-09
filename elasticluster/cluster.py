@@ -147,7 +147,7 @@ class Cluster(Struct):
         self.user_key_name = user_key_name
         self.repository = repository if repository else MemRepository()
         self.availability_zone = extra.pop('availability_zone')
-        self.ssh_to = extra.pop('ssh_to', None)
+        self.ssh_to = extra.pop('ssh_to', None)     
 
         self.user_key_private = os.path.expandvars(user_key_private)
         self.user_key_private = os.path.expanduser(user_key_private)
@@ -1165,12 +1165,11 @@ class Node(Struct):
         self.ips = extra.pop('ips', [])
         # Remove extra arguments, if defined
         for key in extra.keys():
-            if hasattr(self, key):
-                log.debug ("========" + key)
+            if hasattr(self, key):      
                 del extra[key]
         self.extra = {}
         self.extra.update(extra.pop('extra', {}))
-        self.extra.update(extra)
+        self.extra.update(extra)        
 
     def __setstate__(self, state):
         self.__dict__.update(state)
@@ -1188,6 +1187,7 @@ class Node(Struct):
         """
         log.info("Starting node `%s` from image `%s` with flavor %s ...",
                  self.name, self.image_id, self.flavor)
+        
         self.instance_id = self._cloud_provider.start_instance(
             self.user_key_name, self.user_key_public, self.user_key_private,
             self.security_group,
@@ -1196,7 +1196,7 @@ class Node(Struct):
             node_name=("%s-%s" % (self.cluster_name, self.name)),
             **self.extra)
         log.debug("Node `%s` has instance ID `%s`", self.name, self.instance_id)
-
+    
     def stop(self, wait=False):
         """
         Terminate the VM instance launched on the cloud for this specific node.

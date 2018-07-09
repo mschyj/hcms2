@@ -53,7 +53,7 @@ class Session:
         auth_para = {
           "auth": {
             "identity": {
-              "methods": [
+	    "methods": [
                 "password"
               ],
               "password": {
@@ -121,7 +121,7 @@ class Session:
     
     def create_sfs(self):
         '''
-        create sfs function , create sfs with no vpc
+    create sfs function , create sfs with no vpc
 
         '''
         create_sfs_headers = {

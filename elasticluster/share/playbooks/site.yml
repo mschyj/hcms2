@@ -54,6 +54,7 @@
 - include: roles/kubernetes.yml
 - include: roles/pbs+maui.yml
 - include: roles/slurm.yml
+- include: roles/pbspro.yml
 
 # add-on software
 - include: roles/anaconda.yml

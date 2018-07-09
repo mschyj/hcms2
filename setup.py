@@ -113,10 +113,11 @@ elif python_version == (2, 7):
     version_dependent_requires = [
         # Paramiko ceased support for Python 2.6 so we need it here
         'paramiko',
+        'osc-lib==1.0.2',
         # OpenStack
         'python-keystoneclient',
         'python-glanceclient',
-        'python-neutronclient',
+	'python-neutronclient==6.0.0',
         'python-cinderclient',
         'python-novaclient==7.0.0',
         #'python-novaclient',
@@ -186,7 +187,8 @@ setup(
             'hwcc = elasticluster.__main__:main',
         ]
     },
-    setup_requires=['Babel>=2.3.4'],  # see Issue #268
+   # setup_requires=['Babel>=2.3.4','pbr>=2.0.0'],  # see Issue #268
+    setup_requires=['Babel>=2.3.4'],
     install_requires=([
         # ElastiCluster core requirements
         'pip>=9.0.0',  ## see issue #433
@@ -217,4 +219,5 @@ setup(
     ] + version_dependent_requires),
     tests_require=['tox', 'mock', 'pytest>=2.10'],  # read right-to-left
     cmdclass={'test': Tox},
+   # pbr=True    
 )

@@ -93,7 +93,7 @@ KEY_RENAMES = [
 
 SCHEMA = {
     'cloud': {
-        'provider': Or('azure', 'ec2_boto', 'google', 'openstack', 'libcloud'),
+        'provider': Or('azure', 'ec2_boto', 'google', 'openstack', 'libcloud','hwcloud'),
         # allow other keys w/out restrictions; each cloud provider has its own
         # set of keys, which are handled separately
         str: str,
@@ -107,6 +107,11 @@ SCHEMA = {
                 'flavor': nonempty_str,
                 'image_id': nonempty_str,
                 Optional('availability_zone'): str,
+                Optional('charging_mode'):str,
+                Optional('period_type'):str,
+                Optional('period_num'):str,
+                Optional('is_auto_renew',default='false'):str,
+                Optional('is_auto_pay',default='false'):str,                
                 Optional('image_userdata', default=''): str,
                 Optional('image_userdata', default=''): str,
                 Optional('security_group', default='default'): str,  ## FIXME: alphanumeric?
@@ -132,7 +137,12 @@ SCHEMA = {
         Optional("accelerator_type"): nonempty_str,
         Optional("allow_project_ssh_keys", default=True): boolean,
         Optional("min_cpu_platform"): nonempty_str,
-        Optional('availability_zone',default=''): str,
+        Optional('availability_zone',default=''): str,  
+        Optional('charging_mode'):str,
+        Optional('period_type'):str,
+        Optional('period_num'):str,
+        Optional('is_auto_renew',default='false'):str,
+        Optional('is_auto_pay',default='false'):str,            
         # allow other keys w/out restrictions
         Optional(str): str,
     },
@@ -224,6 +234,26 @@ CLOUD_PROVIDER_SCHEMAS = {
         ## DEPRECATED, use `compute_api_version` instead
         Optional("nova_api_version"): nova_api_version,
     },
+    
+    'hwcloud': {
+    "provider": 'hwcloud',
+Optional("auth_url"): url,
+        Optional("cacert"): existing_file,
+        Optional("username"): nonempty_str,
+        Optional("password"): nonempty_str,
+        Optional("user_domain_name"): nonempty_str,
+        Optional("project_domain_name"): nonempty_str,
+        Optional("project_name"): nonempty_str,
+        Optional("request_floating_ip"): boolean,
+        Optional("region_name"): nonempty_str,
+        Optional("compute_api_version"): Or('1.1', '2'),
+        Optional("image_api_version"): Or('1', '2'),
+        Optional("network_api_version"): Or('2.0'),
+        Optional("volume_api_version"): Or('1', '2', '3'),
+        Optional("identity_api_version"): Or('3', '2'),  # no default, can auto-detect
+        ## DEPRECATED, use `compute_api_version` instead
+        Optional("nova_api_version"): nova_api_version,
+    },    
 
     'libcloud': {
         "provider": 'libcloud',
@@ -240,6 +270,7 @@ CLOUD_PROVIDERS = {
     'google':    ('elasticluster.providers.gce',            'GoogleCloudProvider'),
     'azure':     ('elasticluster.providers.azure_provider', 'AzureCloudProvider'),
     'libcloud': ('elasticluster.providers.libcloud_provider', 'LibCloudProvider'),
+    'hwcloud':('elasticluster.providers.hwcloud','OpenStackCloudProvider')
 }
 
 
@@ -517,7 +548,7 @@ def _perform_key_renames(tree, changes=KEY_RENAMES):
     Second argument `changes` is a list of items. Each item is a tuple
     describing a single key rename:
 
-    - 1st field names the section type (e.g., ``cluster``) where the key
+- 1st field names the section type (e.g., ``cluster``) where the key
       renames are going to happen;
     - 2nd field is the old/legacy key name (can be a regular expression);
     - 3rd field is the new/updated key name (or the substitution pattern
@@ -669,6 +700,11 @@ def _gather_node_kind_info(kind_name, cluster_name, cluster_conf):
             'login',
             'network_ids',
             'availability_zone',
+            'charging_mode',
+            'period_type',
+            'period_num',
+            'is_auto_renew',
+            'is_auto_pay',
             'security_group',
             'node_name',
             'ssh_proxy_command',
@@ -1057,9 +1093,9 @@ class Creator(object):
             environment_vars[node_kind] = {}
             for key, value in (list(conf.items())
                                + list(self.cluster_conf[cluster_template].items()) + list(sfs_items)):
-                # Set both group and global variables
+            # Set both group and global variables
                 for prefix in [(node_kind + '_var_'), "global_var_","sfs_"]:
-                    if key.startswith(prefix):
+                    if key.startswith(prefix):      
                         var = key.replace(prefix, '')
                         environment_vars[node_kind][var] = value
                         log.debug("setting variable %s=%s for node kind %s",

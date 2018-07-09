@@ -3,8 +3,10 @@
   when: is_centos
   action: yum pkg={{item}} state=latest
   with_items:
-    - torque-mom
-
+    - /sfs/torque/torque-mom-4.2.10-5.el6.x86_64.rpm
+    - /sfs/torque/torque-libs-4.2.10-5.el6.x86_64.rpm
+    - /sfs/torque/torque-4.2.10-5.el6.x86_64.rpm
+    - /sfs/torque/torque-server-4.2.10-5.el6.x86_64.rpm
 - name: Ensure pbs services are running
   when: is_centos
   action: service name={{item}} state=started

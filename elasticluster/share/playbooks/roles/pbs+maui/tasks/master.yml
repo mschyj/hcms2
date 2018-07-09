@@ -3,8 +3,10 @@
   when: is_centos
   action: yum pkg={{item}} state=latest
   with_items:
-    - torque-server
-    - torque-client
+    - /sfs/torque/torque-server-4.2.10-5.el6.x86_64.rpm
+    - /sfs/torque/torque-client-4.2.10-5.el6.x86_64.rpm
+    - /sfs/torque/torque-4.2.10-5.el6.x86_64.rpm
+    - /sfs/torque/torque-libs-4.2.10-5.el6.x86_64.rpm
     - munge
 
 - name: Create spool dir

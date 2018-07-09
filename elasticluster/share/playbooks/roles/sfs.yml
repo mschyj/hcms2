@@ -1,6 +1,20 @@
 ---
 - name: Setup SFS mount directory
-  hosts: all
+  hosts: slurm_master
+  roles:
+    - role: 'nis'
+      NIS_MASTER: "{{groups.slurm_master[0]}}"
+      when: '{{multiuser_cluster|default("true")|bool}}'
+    - role: 'nfs-client'
+      NFS_MOUNTS:
+        - fs: '{{mount_url}}'
+          mountpoint: '{{mount_point}}'
+      when: '{{auto_mount|default("true")|bool}} and {{on_cloud|default("true")|bool}}'
+    - role: autofs
+    - slurm-master
+  
+- name: Setup SFS mount directory
+  hosts: slurm_worker
   roles:
     - role: 'nis'
       NIS_MASTER: "{{groups.slurm_master[0]}}"
@@ -14,12 +28,24 @@
     - slurm-worker
 
 - name: Setup SFS mount directory
-  hosts: slurm_submit:slurm_client
-  vars:
-    - sfs_mountpoint: '{{mount_point}}'
+  hosts: pbs_master
   roles:
     - role: 'nis'
-      NIS_MASTER: "{{groups.slurm_master[0]}}"
+      NIS_MASTER: "{{groups.pbs_master[0]}}"
+      when: '{{multiuser_cluster|default("true")|bool}}'
+    - role: 'nfs-client'
+      NFS_MOUNTS:
+        - fs: '{{mount_url}}'
+          mountpoint: '{{mount_point}}'
+      when: '{{auto_mount|default("true")|bool}} and {{on_cloud|default("true")|bool}}'
+    - role: autofs
+    - pbs+maui
+  
+- name: Setup SFS mount directory
+  hosts: pbs_clients
+  roles:
+    - role: 'nis'
+      NIS_MASTER: "{{groups.pbs_master[0]}}"
       when: '{{multiuser_cluster|default("true")|bool}}'
     - role: 'nfs-client'
       NFS_MOUNTS:
@@ -27,7 +53,32 @@
           mountpoint: '{{mount_point}}'
       when: '{{auto_mount|default("true")|bool}}'
     - role: autofs
-    - slurm-client
+    - pbs+maui
 
+- name: Setup SFS mount directory
+  hosts: pbspro_master
+  roles:
+    - role: 'nis'
+      NIS_MASTER: "{{groups.pbspro_master[0]}}"
+      when: '{{multiuser_cluster|default("true")|bool}}'
+    - role: 'nfs-client'
+      NFS_MOUNTS:
+        - fs: '{{mount_url}}'
+          mountpoint: '{{mount_point}}'
+      when: '{{auto_mount|default("true")|bool}} and {{on_cloud|default("true")|bool}}'
+    - role: autofs
+    - pbspro
 
-
+- name: Setup SFS mount directory
+  hosts: pbspro_clients
+  roles:
+    - role: 'nis'
+      NIS_MASTER: "{{groups.pbspro_master[0]}}"
+      when: '{{multiuser_cluster|default("true")|bool}}'
+    - role: 'nfs-client'
+      NFS_MOUNTS:
+        - fs: '{{mount_url}}'
+          mountpoint: '{{mount_point}}'
+      when: '{{auto_mount|default("true")|bool}}'
+    - role: autofs
+    - pbspro
