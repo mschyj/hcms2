@@ -1,0 +1,46 @@
+---
+
+- name: PBS masternode Playbook
+  hosts: pbspro_master
+  roles:
+    - role: 'nis'
+      NIS_MASTER: '{{groups.pbspro_master[0]}}'
+      when: '{{multiuser_cluster|default("true")|bool}}'
+    - role: nfs-server
+      NFS_EXPORTS:
+      - path: '/home'
+        clients: '{{groups.pbspro_clients}}'
+        options: 'rw,no_root_squash,async'
+#    - role: hpc-common
+  tasks:
+    - include: pbspro/tasks/master.yml
+  handlers:
+    - include: common/handlers/main.yml
+    - include: pbspro/handlers/main.yml
+
+- name: PBS worker nodes Playbook
+  hosts: pbspro_clients
+  roles:
+    - role: 'nis'
+      NIS_MASTER: '{{groups.pbspro_master[0]}}'
+      when: '{{multiuser_cluster|default("true")|bool}}'
+    - role: nfs-client
+      NFS_MOUNTS:
+      - fs: '{{groups.pbspro_master[0]}}:/home'
+        mountpoint: '/home'
+        options: 'rw,async'
+    - role: autofs
+#    - role: hpc-common
+  tasks:
+    - include: pbspro/tasks/clients.yml
+  handlers:
+    - include: pbspro/handlers/main.yml
+
+- name: PBS node configuration
+  hosts: pbspro_master
+  tasks:
+    - name: Add PBC node
+      action: shell qmgr -c 'create node {{item}}'
+      with_items: '{{groups.pbspro_clients}}'
+    - name: Add root ACL
+      action: shell qmgr -c 'set server acl_roots+=root'
