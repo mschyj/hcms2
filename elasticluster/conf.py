@@ -142,7 +142,9 @@ SCHEMA = {
         Optional('period_type'):str,
         Optional('period_num'):str,
         Optional('is_auto_renew',default='false'):str,
-        Optional('is_auto_pay',default='false'):str,            
+        Optional('is_auto_pay',default='false'):str,    
+        Optional('master_on_cloud',default=True):boolean,
+    Optional('master_connect_ip'):str,        
         # allow other keys w/out restrictions
         Optional(str): str,
     },
@@ -700,6 +702,8 @@ def _gather_node_kind_info(kind_name, cluster_name, cluster_conf):
             'login',
             'network_ids',
             'availability_zone',
+            'master_on_cloud',
+            'master_connect_ip',            
             'charging_mode',
             'period_type',
             'period_num',
@@ -1094,7 +1098,7 @@ class Creator(object):
             for key, value in (list(conf.items())
                                + list(self.cluster_conf[cluster_template].items()) + list(sfs_items)):
             # Set both group and global variables
-                for prefix in [(node_kind + '_var_'), "global_var_","sfs_"]:
+                for prefix in [(node_kind + '_var_'), "global_var_","sfs_","master_"]:
                     if key.startswith(prefix):      
                         var = key.replace(prefix, '')
                         environment_vars[node_kind][var] = value

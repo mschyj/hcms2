@@ -137,16 +137,22 @@ class Cluster(Struct):
                  thread_pool_max_size=10,
                  **extra):
         self.name = name
-        self.template = extra.pop('template', None)
+        self.template = extra.pop('template', None)     
         self._cloud_provider = cloud_provider
         self._setup_provider = setup_provider
-        self.ssh_probe_timeout = ssh_probe_timeout
+        self.ssh_probe_timeout = ssh_probe_timeout      
         self.ssh_proxy_command = ssh_proxy_command
         self.start_timeout = start_timeout
         self.thread_pool_max_size = thread_pool_max_size
         self.user_key_name = user_key_name
         self.repository = repository if repository else MemRepository()
         self.availability_zone = extra.pop('availability_zone')
+        self.master_connect_ip = extra.pop('master_connect_ip',"")
+        self.master_on_cloud = extra.pop('master_on_cloud',True) 
+        if 'master_nodes' not in extra:
+            self.master_nodes = int(extra['extra']['master_nodes'])
+        else:
+            self.master_nodes = int(extra['master_nodes'])        
         self.ssh_to = extra.pop('ssh_to', None)     
 
         self.user_key_private = os.path.expandvars(user_key_private)
@@ -259,7 +265,7 @@ class Cluster(Struct):
     _NODE_KIND_RE = re.compile(r'^[a-z0-9-]*[a-z-]+$', re.I)
 
     def add_node(self, kind, image_id, image_user, flavor,availability_zone,
-                 security_group, image_userdata='', name=None, **extra):
+                 security_group, image_userdata='', master_add_ip = None, name=None, **extra):
         """
         Adds a new node to the cluster. This factory method provides an
         easy way to add a new node to the cluster by specifying all relevant
@@ -329,13 +335,17 @@ class Cluster(Struct):
                 extra[attr] = getattr(self, attr)
 
         if not name:
-            # `extra` contains key `kind` already
+        # `extra` contains key `kind` already
             name = self._naming_policy.new(**extra)
         else:
             self._naming_policy.use(kind, name)
         node = Node(name=name, **extra)
-
-        self.nodes[kind].append(node)
+        if master_add_ip is not None:
+            ips = []
+            ips.append(master_add_ip)
+            node['ips'] = ips
+        
+        self.nodes[kind].append(node)        
         return node
 
     def add_nodes(self, kind, num, image_id, image_user, flavor,availability_zone,
@@ -392,7 +402,7 @@ class Cluster(Struct):
             except ValueError:
                 raise NodeNotFound("Node %s not found in cluster" % node.name)
 
-    def start(self, min_nodes=None, max_concurrent_requests=0):
+    def start(self, min_nodes=None, master_connect_ip = "", max_concurrent_requests=0):
         """
         Starts up all the instances in the cloud.
 
@@ -433,10 +443,34 @@ class Cluster(Struct):
                     "Cannot determine number of processors!"
                     " will start nodes sequentially...")
                 max_concurrent_requests = 1
+        # start nodes, distinguish on cloud or not
+        start_nodes = []
+        master_nodes = []
+        master_connect_ips = re.split(r"\,",self.master_connect_ip)
+        if not self.master_on_cloud and len(master_connect_ips) != self.master_nodes:
+            raise ClusterError("the number of master_connect_ip is not correct, please check your config!") 
+        
+        i = 0
+        if not self.master_on_cloud:
+            for node in copy(nodes):
+                if node['kind'] != 'master':
+                    start_nodes.append(node)
+                elif len(node['ips']) == 0 :        
+                    ips = []
+                    ips.append(master_connect_ips[i])
+                    node['ips'] = ips
+                    master_nodes.append(node)
+                    i = i + 1
+                else:
+                    node['preferred_ip'] = node['ips']
+                    master_nodes.append(node)   
+        else:               
+            start_nodes = nodes
+        
         if max_concurrent_requests > 1:
-            nodes = self._start_nodes_parallel(nodes, max_concurrent_requests)
+            nodes = self._start_nodes_parallel(start_nodes, max_concurrent_requests)
         else:
-            nodes = self._start_nodes_sequentially(nodes)
+            nodes = self._start_nodes_sequentially(start_nodes)
 
         # checkpoint cluster state
         self.repository.save_or_update(self)
@@ -451,6 +485,7 @@ class Cluster(Struct):
             "Checking SSH connection to nodes (timeout: %d seconds) ...",
             self.start_timeout)
         pending_nodes = nodes - not_started_nodes
+        pending_nodes = pending_nodes | set(master_nodes)
         self._gather_node_ip_addresses(
             pending_nodes, self.start_timeout, self.ssh_probe_timeout)
 
@@ -763,10 +798,14 @@ class Cluster(Struct):
         failed = 0
         for node in self.get_all_nodes():
             if not node.instance_id:
-                log.warning(
-                    "Node `%s` has no instance ID."
-                    " Assuming it did not start correctly,"
-                    " so removing it anyway from the cluster.", node.name)
+                if re.match(r'master',node.name) is not None and not self.master_on_cloud:
+                    log.warning("Node `%s` is under cloud,"
+                       " it cannot be removed from the cluster.", node.name)
+                else:
+                    log.warning(
+                       "Node `%s` has no instance ID."
+                       " Assuming it did not start correctly,"
+                       " so removing it anyway from the cluster.", node.name)
                 self.nodes[node.kind].remove(node)
                 continue
             # try and stop node
@@ -918,8 +957,12 @@ class Cluster(Struct):
                                          node.preferred_ip in node.ips):
                     node.connect()
             except InstanceError as ex:
-                log.warning("Ignoring error updating information on node %s: %s",
-                            node, ex)
+                if re.match(r'master',node['name']) is not None and not self.master_on_cloud:
+                    log.warning("node %s is not on cloud",
+                                node)
+                else:
+                    log.warning("Ignoring error updating information on node %s: %s",
+                            node, ex)                 
         self.repository.save_or_update(self)
 
 

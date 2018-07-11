@@ -356,24 +356,53 @@ class ResizeCluster(AbstractCommand):
             # `--template` argument.
             # TODO: find a better solution for this problem, it makes things
             #       complicated for the user
+            
             if (not grp in cluster.nodes or not cluster.nodes[grp]) \
                     and not template:
                 print "Hwccluster can not infer which template to use for "\
                       "the new node(s). Please provide the template with " \
                       "the `-t` or `--template` option"
                 return
-
+            print "====================template: %s"%template 
             if not template:
                 sample_node = cluster.nodes[grp][0]
+                add_master_num = 0
+                master_add_ip = []
+                master_on_cloud = True
+                master_on_cloud_str = sample_node['extra']['master_on_cloud']
+                if master_on_cloud_str == "False" or master_on_cloud_str == "false":
+                    master_on_cloud = False
                 for i in range(self.params.nodes_to_add[grp]):
-                    cluster.add_node(grp,
-                                     sample_node.image_id,
-                                     sample_node.image_user,
-                                     sample_node.flavor,
-                                     sample_node.availability_zone,
-                                     sample_node.security_group,
-                                     image_userdata=sample_node.image_userdata,
-                                     **sample_node.extra)
+                    if grp == 'master' and not master_on_cloud:
+                        add_master_num = add_master_num + 1
+                        another_master_ip = raw_input("Please enter the add %s master ip: " %add_master_num)
+                        while re.match(r"(25[0-5]\.|2[0,4]\d\.|[01]?\d\d?\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)",
+                                           another_master_ip) is None:
+                                another_master_ip = raw_input("The ip is illegal, Please enter the add master ip again: ")
+                        master_add_ip.append(another_master_ip)
+                
+                count = 0
+                for i in range(self.params.nodes_to_add[grp]):
+                    if grp == 'master' and not master_on_cloud:     
+                        cluster.add_node(grp,
+                                         sample_node.image_id,
+                                         sample_node.image_user,
+                                         sample_node.flavor,
+                                         sample_node.availability_zone,
+                                         sample_node.security_group,
+                                         master_add_ip = master_add_ip[count],
+                                         image_userdata=sample_node.image_userdata,
+                                         **sample_node.extra)  
+                        count = count + 1
+                    else:                     
+                        cluster.add_node(grp,
+                                         sample_node.image_id,
+                                         sample_node.image_user,
+                                         sample_node.flavor,
+                                         sample_node.availability_zone,
+                                         sample_node.security_group,
+                                         image_userdata=sample_node.image_userdata,
+                                         **sample_node.extra)
             else:       
                 conf = creator.cluster_conf[template]
                 conf_kind = conf['nodes'][grp]
@@ -387,17 +416,44 @@ class ResizeCluster(AbstractCommand):
                 extra.pop('security_group', None)
                 extra.pop('image_userdata', None)
                 extra.pop('availability_zone')
-
+                
+                add_master_num = 0
+                master_add_ip = []
+                master_on_cloud = True
+                master_on_cloud_str = conf_kind['extra']['master_on_cloud']
+                if master_on_cloud_str == "False" or master_on_cloud_str == "false":
+                    master_on_cloud = False
                 for i in range(self.params.nodes_to_add[grp]):
-                    
-                    cluster.add_node(grp,
-                                     conf_kind['image_id'],
-                                     image_user,
-                                     conf_kind['flavor'],
-                                     conf_kind['availability_zone'],
-                                     conf_kind['security_group'],
-                                     image_userdata=userdata,
-                                     **extra)
+                    if grp == 'master' and not master_on_cloud:
+                        add_master_num = add_master_num + 1
+                        another_master_ip = raw_input("Please enter the add %s master ip: " %add_master_num)
+                        while re.match(r"(25[0-5]\.|2[0,4]\d\.|[01]?\d\d?\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)",
+                                           another_master_ip) is None:
+                                another_master_ip = raw_input("The ip is illegal, Please enter the add master ip again: ")
+                        master_add_ip.append(another_master_ip)
+                        
+                count = 0
+                for i in range(self.params.nodes_to_add[grp]):
+                    if grp == 'master' and not master_on_cloud: 
+                        cluster.add_node(grp,
+                                         conf_kind['image_id'],
+                                         image_user,
+                                         conf_kind['flavor'],
+                                         conf_kind['availability_zone'],
+                                         conf_kind['security_group'],
+                                         master_add_ip = master_add_ip[count],
+                                         image_userdata=userdata,
+                                         **extra)
+                        count = count + 1
+                    else:
+                        cluster.add_node(grp,
+                                         conf_kind['image_id'],
+                                         image_user,
+                                         conf_kind['flavor'],
+                                         conf_kind['availability_zone'],
+                                         conf_kind['security_group'],
+                                         image_userdata=userdata,
+                                         **extra)                        
 
         for grp in self.params.nodes_to_remove:
             n_to_rm = self.params.nodes_to_remove[grp]
@@ -602,8 +658,12 @@ class ListNodes(AbstractCommand):
         else:
             print(cluster_summary(cluster))
             for cls in cluster.nodes:
-                print("%s nodes:" % cls)
-                print("")
+                if cls == 'master'and not cluster.master_on_cloud:
+                    print("%s nodes [not on cloud,only ips are valid]: " % cls)
+                    print("")
+                else:
+                    print("%s nodes: " % cls)
+                    print("")    
                 for node in cluster.nodes[cls]:
                     txt = ["    " + i for i in node.pprint().splitlines()]
                     print('  - ' + str.join("\n", txt)[4:])
