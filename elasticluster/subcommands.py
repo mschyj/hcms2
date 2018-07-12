@@ -363,7 +363,6 @@ class ResizeCluster(AbstractCommand):
                       "the new node(s). Please provide the template with " \
                       "the `-t` or `--template` option"
                 return
-            print "====================template: %s"%template 
             if not template:
                 sample_node = cluster.nodes[grp][0]
                 add_master_num = 0
