@@ -68,10 +68,7 @@ from openstack import profile as _profile
 from openstack import proxy
 from openstack import proxy2        
 from openstack import utils
-print ("location3")
 from openstack import session as _session
-#import session as _session
-print ("location4")
 from openstack import utils
 
 _logger = logging.getLogger(__name__)
