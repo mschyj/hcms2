@@ -1,9 +1,21 @@
 ---
+- name: Ensure App directory exists
+  file:
+    path='/home/app'
+    state=directory
+- name: Copy PBSPro packages
+  when: is_centos
+  copy:
+    dest="/home/app/{{item}}"
+    src="{{app_places}}/{{item}}"
+  with_items:
+    - pbspro-execution-18.1.2-0.x86_64.rpm
+
 - name: Install PBSPro packages (mom)
   when: is_centos
   action: yum pkg={{item}} 
   with_items:
-    - /sfs/pbspro/pbspro-execution-18.1.2-0.x86_64.rpm
+    - /home/app/pbspro-execution-18.1.2-0.x86_64.rpm
 
 - name: Check PBSPro config file 
   action: lineinfile dest=/etc/pbs.conf

@@ -2,7 +2,10 @@
 - name: Setup SFS mount directory for slurm master
   hosts: slurm_master
   roles:
-    - role: nfs-client
+    - role: 'nis'
+      NIS_MASTER: "{{groups.slurm_master[0]}}"
+      when: '{{multiuser_cluster|default("true")|bool}}'
+    - role: 'nfs-client'
       NFS_MOUNTS:
         - fs: '{{mount_url}}'
           mountpoint: '{{mount_point}}'
@@ -13,7 +16,10 @@
 - name: Setup SFS mount directory for slurm worker
   hosts: slurm_worker
   roles:
-    - role: nfs-client
+    - role: 'nis'
+      NIS_MASTER: "{{groups.slurm_master[0]}}"
+      when: '{{multiuser_cluster|default("true")|bool}}'
+    - role: 'nfs-client'
       NFS_MOUNTS:
         - fs: '{{mount_url}}'
           mountpoint: '{{mount_point}}'
@@ -24,7 +30,10 @@
 - name: Setup SFS mount directory for SGE master
   hosts: gridengine_master
   roles:
-    - role: nfs-client
+    - role: 'nis'
+      NIS_MASTER: "{{groups.gridengine_master[0]}}"
+      when: '{{multiuser_cluster|default("true")|bool}}'
+    - role: 'nfs-client'
       NFS_MOUNTS:
         - fs: '{{mount_url}}'
           mountpoint: '{{mount_point}}'
@@ -33,20 +42,26 @@
     - gridengine-master
 
 - name: Setup SFS mount directory for SGE worker
-  hosts: gridengine_clients:gridengine_worker
+  hosts: gridengine_worker
   roles:
-    - role: nfs-client
+    - role: 'nis'
+      NIS_MASTER: "{{groups.slurm_master[0]}}"
+      when: '{{multiuser_cluster|default("true")|bool}}'
+    - role: 'nfs-client'
       NFS_MOUNTS:
         - fs: '{{mount_url}}'
           mountpoint: '{{mount_point}}'
       when: '{{auto_mount|default("true")|bool}}'
     - role: autofs
-    - role: gridengine-exec
+    - slurm-worker
 
-- name: Setup SFS mount directory for Torque
+- name: Setup SFS mount directory
   hosts: pbs_master
   roles:
-    - role: nfs-client
+    - role: 'nis'
+      NIS_MASTER: "{{groups.pbs_master[0]}}"
+      when: '{{multiuser_cluster|default("true")|bool}}'
+    - role: 'nfs-client'
       NFS_MOUNTS:
         - fs: '{{mount_url}}'
           mountpoint: '{{mount_point}}'
@@ -54,10 +69,13 @@
     - role: autofs
     - pbs+maui
   
-- name: Setup SFS mount directory for Torque
+- name: Setup SFS mount directory
   hosts: pbs_clients
   roles:
-    - role: nfs-client
+    - role: 'nis'
+      NIS_MASTER: "{{groups.pbs_master[0]}}"
+      when: '{{multiuser_cluster|default("true")|bool}}'
+    - role: 'nfs-client'
       NFS_MOUNTS:
         - fs: '{{mount_url}}'
           mountpoint: '{{mount_point}}'
@@ -65,10 +83,13 @@
     - role: autofs
     - pbs+maui
 
-- name: Setup SFS mount directory for PBSPro
+- name: Setup SFS mount directory
   hosts: pbspro_master
   roles:
-    - role: nfs-client
+    - role: 'nis'
+      NIS_MASTER: "{{groups.pbspro_master[0]}}"
+      when: '{{multiuser_cluster|default("true")|bool}}'
+    - role: 'nfs-client'
       NFS_MOUNTS:
         - fs: '{{mount_url}}'
           mountpoint: '{{mount_point}}'
@@ -76,10 +97,13 @@
     - role: autofs
     - pbspro
 
-- name: Setup SFS mount directory for PBSPro
+- name: Setup SFS mount directory
   hosts: pbspro_clients
   roles:
-    - role: nfs-client
+    - role: 'nis'
+      NIS_MASTER: "{{groups.pbspro_master[0]}}"
+      when: '{{multiuser_cluster|default("true")|bool}}'
+    - role: 'nfs-client'
       NFS_MOUNTS:
         - fs: '{{mount_url}}'
           mountpoint: '{{mount_point}}'
