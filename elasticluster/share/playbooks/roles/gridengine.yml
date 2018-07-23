@@ -18,6 +18,10 @@
         - path: '{{SGE_VAR}}/{{SGE_CELL}}/common'
           clients: '{{groups.gridengine_worker + groups.gridengine_master}}'
           options: 'rw,no_root_squash,no_subtree_check'
+    - role: nfs-client
+      NFS_MOUNTS:
+        - fs: '{{mount_url}}'
+          mountpoint: '{{mount_point}}'
     - role: 'autofs'
 
 
@@ -42,5 +46,7 @@
           mountpoint: '/home'
         - fs: '{{groups.gridengine_master[0]}}:{{SGE_VAR}}/{{SGE_CELL}}/common'
           mountpoint: '{{SGE_VAR}}/{{SGE_CELL}}/common'
+        - fs: '{{mount_url}}'
+          mountpoint: '{{mount_point}}'        
     - role: autofs
     - role: gridengine-exec
