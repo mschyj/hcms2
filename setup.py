@@ -120,6 +120,7 @@ elif python_version == (2, 7):
 	'python-neutronclient==6.0.0',
         'python-cinderclient',
         'python-novaclient==7.0.0',
+        'oslo.config==6.2.1',
         #'python-novaclient',
         # fix dependency conflict among OpenStack libraries:
         # `osc-lib` has a more strict dependency specifier
