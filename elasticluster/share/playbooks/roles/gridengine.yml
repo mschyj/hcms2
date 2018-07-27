@@ -19,6 +19,9 @@
           clients: '{{groups.gridengine_worker + groups.gridengine_master}}'
           options: 'rw,no_root_squash,no_subtree_check'
     - role: nfs-client
+      file:
+        path={{mount_point}}
+        state=directory
       NFS_MOUNTS:
         - fs: '{{mount_url}}'
           mountpoint: '{{mount_point}}'
@@ -41,6 +44,9 @@
     # not set up
     - role: gridengine-common
     - role: nfs-client
+      file:
+        path={{mount_point}}
+        state=directory
       NFS_MOUNTS:
         - fs: '{{groups.gridengine_master[0]}}:/home'
           mountpoint: '/home'
