@@ -25,6 +25,7 @@
       NFS_MOUNTS:
         - fs: '{{mount_url}}'
           mountpoint: '{{mount_point}}'
+      when: '{{auto_mount|default("true")|bool}}'
     - role: 'autofs'
 
 
@@ -44,15 +45,18 @@
     # not set up
     - role: gridengine-common
     - role: nfs-client
-      file:
-        path={{mount_point}}
-        state=directory
       NFS_MOUNTS:
         - fs: '{{groups.gridengine_master[0]}}:/home'
           mountpoint: '/home'
         - fs: '{{groups.gridengine_master[0]}}:{{SGE_VAR}}/{{SGE_CELL}}/common'
           mountpoint: '{{SGE_VAR}}/{{SGE_CELL}}/common'
+    - role: nfs-client
+      file:
+        path={{mount_point}}
+        state=directory
+      NFS_MOUNTS:  
         - fs: '{{mount_url}}'
-          mountpoint: '{{mount_point}}'        
+          mountpoint: '{{mount_point}}'
+      when: '{{auto_mount|default("true")|bool}}'        
     - role: autofs
     - role: gridengine-exec
