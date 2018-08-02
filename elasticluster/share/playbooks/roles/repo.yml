@@ -1,0 +1,26 @@
+---
+- name: Setup scheduler repo for slurm master
+  hosts: slurm_master
+  roles:
+    - role: 'nfs-client'
+      file:
+        path='/scheduler'
+        state=directory
+      NFS_MOUNTS:
+        - fs: '{{user_client_ip}}:/scheduler'
+          mountpoint: '/scheduler'
+    - role: autofs
+    - slurm-master
+
+- name: Setup scheduler repo for slurm worker
+  hosts: slurm_worker
+  roles:
+    - role: 'nfs-client'
+      file:
+        path='/scheduler'
+        state=directory
+      NFS_MOUNTS:
+        - fs: '{{user_client_ip}}:/scheduler'
+          mountpoint: '/scheduler'
+    - role: autofs
+    - slurm-worker

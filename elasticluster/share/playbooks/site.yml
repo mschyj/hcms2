@@ -42,9 +42,9 @@
 - include: roles/ceph.yml
 - include: roles/glusterfs.yml
 - include: roles/pvfs2.yml
+- include: roles/repo.yml
 - include: roles/sfs.yml
 - include: roles/s3fs.yml
-
 # now install and set up computing infrastructure
 - include: roles/gridengine.yml
 - include: roles/hadoop.yml

@@ -1,5 +1,5 @@
 ---
-- name: Setup SFS mount directory
+- name: Setup SFS mount directory for slurm master
   hosts: slurm_master
   roles:
     - role: 'nis'
@@ -13,7 +13,7 @@
     - role: autofs
     - slurm-master
   
-- name: Setup SFS mount directory
+- name: Setup SFS mount directory for slurm worker
   hosts: slurm_worker
   roles:
     - role: 'nis'
@@ -27,7 +27,7 @@
     - role: autofs
     - slurm-worker
 
-- name: Setup SFS mount directory
+- name: Setup SFS mount directory for torque master
   hosts: pbs_master
   roles:
     - role: 'nis'
@@ -41,7 +41,7 @@
     - role: autofs
     - pbs+maui
   
-- name: Setup SFS mount directory
+- name: Setup SFS mount directory for torque clients
   hosts: pbs_clients
   roles:
     - role: 'nis'
@@ -55,7 +55,7 @@
     - role: autofs
     - pbs+maui
 
-- name: Setup SFS mount directory
+- name: Setup SFS mount directory for pbspro master
   hosts: pbspro_master
   roles:
     - role: 'nis'
@@ -69,7 +69,7 @@
     - role: autofs
     - pbspro
 
-- name: Setup SFS mount directory
+- name: Setup SFS mount directory for pbspro clients
   hosts: pbspro_clients
   roles:
     - role: 'nis'

@@ -69,7 +69,6 @@
     - slurm
     - debian
 
-
 - name: Enable Copr SLURM repo by verdurin
   tags: 
     - slurm
