@@ -1,27 +1,13 @@
 ---
-- name: Ensure App directory exists
-  file:
-    path='/home/app'
-    state=directory
-- name: Copy Torque packages
-  when: is_centos
-  copy:
-    dest="/home/app/{{item}}"
-    src="{{app_places}}/{{item}}"
-  with_items:
-    - torque-mom-4.2.10-5.el6.x86_64.rpm
-    - torque-libs-4.2.10-5.el6.x86_64.rpm
-    - torque-4.2.10-5.el6.x86_64.rpm
-    - torque-server-4.2.10-5.el6.x86_64.rpm
 
 - name: Install TORQUE packages (mom)
   when: is_centos
   action: yum pkg={{item}}
   with_items:
-    - /home/app/torque-mom-4.2.10-5.el6.x86_64.rpm
-    - /home/app/torque-libs-4.2.10-5.el6.x86_64.rpm
-    - /home/app/torque-4.2.10-5.el6.x86_64.rpm
-    - /home/app/torque-server-4.2.10-5.el6.x86_64.rpm
+    - /scheduler/torque-mom-4.2.10-5.el6.x86_64.rpm
+    - /scheduler/torque-libs-4.2.10-5.el6.x86_64.rpm
+    - /scheduler/torque-4.2.10-5.el6.x86_64.rpm
+    - /scheduler/torque-server-4.2.10-5.el6.x86_64.rpm
 
 - name: Ensure pbs services are running
   when: is_centos

@@ -39,8 +39,10 @@
 - name: PBS node configuration
   hosts: pbspro_master
   tasks:
-    - name: Add PBC node
+    - name: Add PBC node.Ignoring if worker node has been added.
       action: shell qmgr -c 'create node {{item}}'
       with_items: '{{groups.pbspro_clients}}'
-    - name: Add root ACL
+      ignore_errors: yes
+    - name: Add root ACL.Ingoring if root has been added
       action: shell qmgr -c 'set server acl_roots+=root'
+      ignore_errors: yes

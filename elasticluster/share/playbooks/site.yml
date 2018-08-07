@@ -44,7 +44,8 @@
 - include: roles/pvfs2.yml
 - include: roles/repo.yml
 - include: roles/sfs.yml
-- include: roles/s3fs.yml
+#- include: roles/s3fs.yml
+#
 # now install and set up computing infrastructure
 - include: roles/gridengine.yml
 - include: roles/hadoop.yml
@@ -54,6 +55,7 @@
 - include: roles/kubernetes.yml
 - include: roles/pbs+maui.yml
 - include: roles/slurm.yml
+- include: roles/pbspro.yml
 
 # add-on software
 - include: roles/anaconda.yml
