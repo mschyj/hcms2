@@ -368,7 +368,10 @@ class ResizeCluster(AbstractCommand):
                 add_master_num = 0
                 master_add_ip = []
                 master_on_cloud = True
-                master_on_cloud_str = sample_node['extra']['master_on_cloud']
+                master_on_cloud_str  =   "true"
+                if  "master_on_cloud" in sample_node['extra'] :
+                    master_on_cloud_str = sample_node['extra']['master_on_cloud']
+                     
                 if master_on_cloud_str == "False" or master_on_cloud_str == "false":
                     master_on_cloud = False
                 for i in range(self.params.nodes_to_add[grp]):
