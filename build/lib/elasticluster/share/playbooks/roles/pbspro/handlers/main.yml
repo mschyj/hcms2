@@ -1,4 +1,0 @@
----
-- name: restart pbs
-  action: service name=pbs state=restarted
-  when: is_centos

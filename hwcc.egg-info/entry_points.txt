@@ -1,3 +1,0 @@
-[console_scripts]
-hwcc = elasticluster.__main__:main
-
