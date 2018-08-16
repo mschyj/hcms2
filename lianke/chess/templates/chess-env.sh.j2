@@ -1,0 +1,12 @@
+export CLUSTER_NAME="mycluster"
+export IDENTITY_TYPE="NIS"    #default
+export SCHEDULER_TYPE="SLURM"   #default
+export MANAGER_HOST={{groups.slurm_master[0]}} #no prolem
+export MANAGER_IP={{slurm_masterips}}
+export LOGIN_HOST={{groups.slurm_master[0]}}
+export LOGIN_IP={{slurm_masterips}}
+export COMPUTE_HOSTLIST={{groups.slurm_worker}}
+export COMPUTE_IPLIST={{slurm_workerips}}
+export NODE_NAME={{groups.slurm_master[0]}}
+export NODE_IP={{slurm_masterips}}
+export NODE_ROLE="M"

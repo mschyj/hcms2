@@ -1,0 +1,8 @@
+- name: send the environment variable
+  template:
+    dest: '~/result.sh'
+    src: 'chess-env.sh.j2'
+- name: source the environment_variable
+  shell: echo source ~/result.sh >> ~/.bashrc
+- name: execute the entry.sh
+  shell: sh /usr/local/.chess/scripts/entry.sh
