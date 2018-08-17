@@ -1,0 +1,6 @@
+- hosts: slurm_master
+  roles:
+    - role: chess
+- hosts: pbs_master
+  roles:
+    - role: chess

@@ -1,0 +1,44 @@
+export CLUSTER_NAME="mycluster"
+export IDENTITY_TYPE="NIS"    #default
+export SCHEDULER_TYPE="SLURM"   #default
+export NODE_ROLE="M,T"
+export NODE_PASSWORD=""
+export COMPUTE_IPLIST=
+{% for host in groups['slurm_worker']%}
+={{hostvars[host].ansible_default_ipv4.address}}
+{% endfor -%}
+
+export NODE_IP=
+{% for host in groups['slurm_master']%}
+={{hostvars[host].ansible_default_ipv4.address}}
+{% endfor -%}
+
+export LOGIN_IP=
+{% for host in groups['slurm_master']%}
+={{hostvars[host].ansible_default_ipv4.address}}
+{% endfor -%}
+
+export MANAGER_IP=
+{% for host in groups['slurm_master']%}
+={{hostvars[host].ansible_default_ipv4.address}}
+{% endfor -%}
+
+export MANAGER_HOST=
+{% for host in groups['slurm_master']%}
+={{host}}
+{% endfor -%}
+
+export LOGIN_HOST=
+{% for host in groups['slurm_master']%}
+={{host}}
+{% endfor -%}
+
+export NODE_NAME=
+{% for host in groups['slurm_master']%}
+={{host}}
+{% endfor -%}
+
+export COMPUTE_HOSTLIST=
+{% for host in groups['slurm_worker']%}
+={{host}}
+{% endfor -%}
