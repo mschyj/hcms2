@@ -1,10 +1,11 @@
-export CLUSTER_NAME="mycluster"
+export CLUSTER_NAME="elasticluster"
 
 export SCHEDULER_TYPE={% if "slurm_master" in group_names %}SLURM{% endif %}{% if "pbs_master" in group_names %}PBS{% endif%}{% if "slurm_worker" in group_names %}SLURM{% endif %}{% if "pbs_worker" in group_names %}PBS{% endif%}
 
 export IDENTITY_TYPE="NIS"    #default
 
-export NODE_ROLE="M,T"
+export NODE_ROLE={% if "slurm_master" in group_names %}"M,T"{% endif %}{% if "pbs_master" in group_names %}"M,T"
+{% endif%}{% if "slurm_worker" in group_names %}"E"{% endif %}{% if "pbs_worker" in group_names %}"E"{% endif%}
 
 export NODE_PASSWORD=""
 
