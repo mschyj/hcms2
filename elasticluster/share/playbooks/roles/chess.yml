@@ -1,6 +1,16 @@
 - hosts: slurm_master
   roles:
     - role: chess
+      when: '{{chess_enabled|default ("false")|bool}}'
+- hosts: slurm_worker
+  roles:
+    - role: chess
+      when: '{{chess_enabled|default ("false")|bool}}'
 - hosts: pbs_master
   roles:
     - role: chess
+      when: '{{chess_enabled|default ("false")|bool}}'
+- hosts: pbs_worker
+  roles:
+    - role: chess
+      when: '{{chess_enabled|default ("false")|bool}}'
