@@ -59,3 +59,8 @@ Enable Slurm power saving options
   3:Initialize the slurm environment, the master node name should be supplied here, you could get it from the Cloud console
     #sh Initslurm.sh 
 
+Enable CHESS Web Portal
+  1:Enable chess
+    global_var_chess_enabled = true //defined in setup session, default value is false
+  2:Choose chess image
+    image_id = chess_image_id
