@@ -16,4 +16,11 @@
   hosts: all
   # by default these are no-op (empty task list)
   roles: []
-  tasks: []
+  tasks: 
+    - name: Get internal repo for cluster
+      get_url:
+        url: 'http://mirrors.myhuaweicloud.com/repo/mirrors_source.sh'
+        dest: '/etc/yum.repos.d/'
+        validate_certs: '{{ not insecure_https_downloads|default("no")|bool }}'
+    - action: shell source /etc/yum.repos.d/mirrors_source.sh
+#- include: roles/repo.yml
