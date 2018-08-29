@@ -208,7 +208,7 @@ class AnsibleSetupProvider(AbstractSetupProvider):
         #
         # Provide default values for important configuration variables...
         ansible_env = {
-            'ANSIBLE_FORKS':             '10',
+            'ANSIBLE_FORKS':             '100',
             'ANSIBLE_HOST_KEY_CHECKING': 'no',
             'ANSIBLE_RETRY_FILES_ENABLED': 'no',
             'ANSIBLE_ROLES_PATH':        ':'.join(reversed(ansible_roles_dirs)),
