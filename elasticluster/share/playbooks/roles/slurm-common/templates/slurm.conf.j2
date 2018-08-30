@@ -36,8 +36,8 @@ PriorityFavorSmall=NO
 
 ## accounting settings
 #
-
-AccountingStorageType=accounting_storage/slurmdbd
+AccountingStorageLoc=/etc/slurm/acct
+AccountingStorageType=accounting_storage/filetxt
 AccountingStorageEnforce=associations,limits,qos
 AccountingStoreJobComment=YES
 AccountingStorageHost={{SLURM_ACCOUNTING_HOST}}
@@ -169,13 +169,9 @@ ResumeRate={{slurm_resumerate|default(300)}}
 #ResumeTimeout={{slurm_resumetimeout|default(600)}}
 
 ## Cluster nodes
-# 
-{% for host in groups.slurm_worker %}
-NodeName={{host}} RealMemory={{hostvars[host]['ansible_memtotal_mb']|int - 384}} CPUs={{hostvars[host]['ansible_processor_vcpus']}} Sockets={{hostvars[host]['ansible_processor_vcpus']}} CoresPerSocket=1 ThreadsPerCore=1
-{% endfor %}
-
-
+#
+Include /etc/slurm/nodes.conf
 
 ## Cluster partitions
 #
-PartitionName=main Nodes={% for host in groups.slurm_worker %}{{host}},{%endfor%} MaxTime=INFINITE State=UP Default=YES
+PartitionName=main Nodes=ALL MaxTime=INFINITE State=UP Default=YES

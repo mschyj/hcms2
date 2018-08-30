@@ -10,15 +10,15 @@
   include: 'init-{{ansible_os_family}}.yml'
 
 
-- name: Enable "backports" repo (Debian 8 "jessie")
-  tags:
-    - gridengine
-    - gridengine-common
-  apt_repository:
-    repo='deb http://ftp.debian.org/debian jessie-backports main'
-    state=present
-    update_cache=yes
-  when: 'is_debian_jessie'
+#/- name: Enable "backports" repo (Debian 8 "jessie")
+#/  tags:
+#/    - gridengine
+#/    - gridengine-common
+#/  apt_repository:
+#/    repo='deb http://ftp.debian.org/debian jessie-backports main'
+#/    state=present
+#/    update_cache=yes
+#/  when: 'is_debian_jessie'
 
 
 - name: Enable Copr SGE repo by loveshack

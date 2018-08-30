@@ -3,10 +3,10 @@
 # Set up SSH host-based authentication
 #
 
-- name: Load distribution-dependent values (Debian/Ubuntu)
-  set_fact:
-    ssh_keysign_path: '/usr/lib/openssh/ssh-keysign'
-  when: '{{ is_debian_compatible }}'
+#/- name: Load distribution-dependent values (Debian/Ubuntu)
+#/  set_fact:
+#/    ssh_keysign_path: '/usr/lib/openssh/ssh-keysign'
+#/  when: '{{ is_debian_compatible }}'
 
 
 - name: Load distribution-dependent values (CentOS/RHEL)

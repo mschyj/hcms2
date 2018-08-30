@@ -53,21 +53,21 @@
 # logs in `/var/log/slurm-llnl` -- symlink this to `/etc/slurm` and
 # `/var/log/slurm` etc. so we need not worry about varying paths in
 # playbooks and config files
-- name: Make compatibility symlinks
-  file:
-    path='{{ item.to }}'
-    src='{{ item.from }}'
-    state=link
-    force=yes
-  with_items:
-    - { from: '/etc/slurm',     to: '/etc/slurm-llnl' }
-    - { from: '/var/lib/slurm', to: '/var/lib/slurm-llnl' }
-    - { from: '/var/log/slurm', to: '/var/log/slurm-llnl' }
-    - { from: '/var/run/slurm', to: '/var/run/slurm-llnl' }
-  when: is_debian_compatible
-  tags: 
-    - slurm
-    - debian
+#/- name: Make compatibility symlinks
+#/  file:
+#/    path='{{ item.to }}'
+#/    src='{{ item.from }}'
+#/    state=link
+#/    force=yes
+#/  with_items:
+#/    - { from: '/etc/slurm',     to: '/etc/slurm-llnl' }
+#/    - { from: '/var/lib/slurm', to: '/var/lib/slurm-llnl' }
+#/    - { from: '/var/log/slurm', to: '/var/log/slurm-llnl' }
+#/    - { from: '/var/run/slurm', to: '/var/run/slurm-llnl' }
+#/  when: is_debian_compatible
+#/  tags: 
+#/    - slurm
+#/    - debian
 
 - name: Enable Copr SLURM repo by verdurin
   tags: 
@@ -92,6 +92,16 @@
     group=root
     mode=0444
 
+- name: Deploy SLURM nodes file
+  tags:
+    - slurm
+  template:
+    src=nodes.conf.j2
+    dest=/etc/slurm/nodes.conf
+    owner=root
+    group=root
+    mode=0444
+
 - name: Deploy script to suspend cloud instance 
   tags: 
     - slurm
@@ -112,15 +122,15 @@
     group=root
     mode=0555
 
-- name: Install support packages (Debian/Ubuntu)
-  package:
-    pkg={{item}}
-    state=latest
-  with_items:
-    - dmtcp
-    - libopenmpi-dev
-    - openmpi-bin
-  when: '{{is_debian_or_ubuntu}}'
+#/- name: Install support packages (Debian/Ubuntu)
+#/  package:
+#/    pkg={{item}}
+#/    state=latest
+#/  with_items:
+#/    - dmtcp
+#/    - libopenmpi-dev
+#/    - openmpi-bin
+#/  when: '{{is_debian_or_ubuntu}}'
 
 
 - name: Install SLURM packages (RHEL-compatible)

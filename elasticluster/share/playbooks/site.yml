@@ -16,59 +16,59 @@
 - name: Common setup for all hosts
   hosts: all
   gather_facts: yes
-  pre_tasks:
-    - name: Ensure apt-daily is *not* running
-      script: |
-        no-update-on-reboot.sh
-      become: yes
-      when: 'is_debian_compatible'
+#/  pre_tasks:
+#/    - name: Ensure apt-daily is *not* running
+#/      script: |
+#/        no-update-on-reboot.sh
+#/      become: yes
+#/      when: 'is_debian_compatible'
   roles:
     - role: common
-#    - role: iptables
+#/    - role: iptables
       # FIXME: should change to 'DROP' when all playbooks register their input ports!
-      default_input_policy: 'ACCEPT'
+#/      default_input_policy: 'ACCEPT'
     - role: ntpd
       ntp_server: '{{groups.ntp_master|default([])}}'
-#    - role: pdsh
+#/    - role: pdsh
 
 # This needs to be run as early as possible as it may need to reboot
 # the VM to install driver support
-- include: roles/cuda.yml
+#/- include: roles/cuda.yml
 
 # Run all other playbooks one by one, so they get a chance of doing
 # their setup depending on configured host groups
 
 # filesystems/storage first so we could in principle use it in compute clusters
-- include: roles/ceph.yml
-- include: roles/glusterfs.yml
-- include: roles/pvfs2.yml
+#/- include: roles/ceph.yml
+#/- include: roles/glusterfs.yml
+#/- include: roles/pvfs2.yml
 - include: roles/repo.yml
 - include: roles/sfs.yml
-#- include: roles/s3fs.yml
+#/- include: roles/s3fs.yml
 
 # now install and set up computing infrastructure
 - include: roles/gridengine.yml
-- include: roles/hadoop.yml
-- include: roles/htcondor.yml
-- include: roles/ipython.yml
-- include: roles/jenkins.yml
-- include: roles/kubernetes.yml
+#/- include: roles/hadoop.yml
+#/- include: roles/htcondor.yml
+#/- include: roles/ipython.yml
+#/- include: roles/jenkins.yml
+#/- include: roles/kubernetes.yml
 - include: roles/pbs+maui.yml
 - include: roles/slurm.yml
 
 # add-on software
 - include: roles/chess.yml
-- include: roles/anaconda.yml
-- include: roles/ansible.yml
-- include: roles/easybuild.yml
-- include: roles/ganglia.yml
-- include: roles/r.yml
-- include: roles/samba.yml
+#/- include: roles/anaconda.yml
+#/- include: roles/ansible.yml
+#/- include: roles/easybuild.yml
+#/- include: roles/ganglia.yml
+#/- include: roles/r.yml
+#/- include: roles/samba.yml
 
 
 # Jupyter installation comes last, to allow it to pick up any SW that's been
 # installed so far (e.g., for kernels, or for ipyparallel)
-- include: roles/jupyterhub.yml
+#/- include: roles/jupyterhub.yml
 
 # for local customizations
 - include: after.yml

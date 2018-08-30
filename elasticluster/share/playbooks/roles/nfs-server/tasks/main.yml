@@ -18,6 +18,10 @@
     state: '{{ pkg_install_state }}'
   with_items: '{{nfs_server_packages}}'
 
+- name: Restart NFS server services
+  service:
+    name: nfs
+    state: restarted
 
 # exports need to be there before attempting to install/start the
 # server, otherwise the service startup script might refuse to start
@@ -45,27 +49,27 @@
     state: 'started'
 
 
-- name: Ensure NFS server is running (Debian 8 "jessie")
-  tags:
-    - nfs
-    - nfs-server
-  command: |
-     env PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin _SYSTEMCTL_SKIP_REDIRECT=true /etc/init.d/nfs-kernel-server start
-  args:
-    chdir: '/'
-  when: 'is_debian_8'
+#/- name: Ensure NFS server is running (Debian 8 "jessie")
+#/  tags:
+#/    - nfs
+#/    - nfs-server
+#/  command: |
+#/     env PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin _SYSTEMCTL_SKIP_REDIRECT=true /etc/init.d/nfs-kernel-server start
+#/  args:
+#/    chdir: '/'
+#/  when: 'is_debian_8'
 
 
-- name: Ensure NFS server is running
-  tags:
-    - nfs
-    - nfs-server
-  service:
-    name: '{{item}}'
-    enabled: yes
-    state: '{{_nfs_server_started_state}}'
-  with_items: '{{nfs_server_services}}'
-  when: 'not {{is_debian_8}}'
+#/- name: Ensure NFS server is running
+#/  tags:
+#/    - nfs
+#/    - nfs-server
+#/  service:
+#/    name: '{{item}}'
+#/    enabled: yes
+#/    state: '{{_nfs_server_started_state}}'
+#/  with_items: '{{nfs_server_services}}'
+#/  when: 'not {{is_debian_8}}'
 
 
 - name: Reload NFS exports file

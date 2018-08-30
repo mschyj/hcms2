@@ -28,16 +28,16 @@
     - systemd
 
 
-- name: Install MUNGE (Debian/Ubuntu)
-  tags:
-    - slurm
-    - munge
-    - debian
-  package:
-    pkg: munge
-    state: '{{ pkg_install_state }}'
-  when:
-    is_debian_compatible
+#/- name: Install MUNGE (Debian/Ubuntu)
+#/  tags:
+#/    - slurm
+#/    - munge
+#/    - debian
+#/  package:
+#/    pkg: munge
+#/    state: '{{ pkg_install_state }}'
+#/  when:
+#/    is_debian_compatible
 
 
 - name: Install MUNGE (RHEL-compatible)
@@ -83,19 +83,19 @@
     - systemd
 
 
-- name: Add `--syslog` startup options for `munged` (Ubuntu 14.04)
-  tags:
-    - slurm
-    - munge
-    - ubuntu
-    - trusty
-    - utopic
-  lineinfile:
-    dest='/etc/default/munge'
-    line='OPTIONS="--syslog"'
-    regexp='^OPTIONS='
-    state=present
-  when: '{{is_ubuntu_14_04}} or {{is_ubuntu_14_10}}'
+#/- name: Add `--syslog` startup options for `munged` (Ubuntu 14.04)
+#/  tags:
+#/    - slurm
+#/    - munge
+#/    - ubuntu
+#/    - trusty
+#/    - utopic
+#/  lineinfile:
+#/    dest='/etc/default/munge'
+#/    line='OPTIONS="--syslog"'
+#/    regexp='^OPTIONS='
+#/    state=present
+#/  when: '{{is_ubuntu_14_04}} or {{is_ubuntu_14_10}}'
 
 
 - name: Configure MUNGE
