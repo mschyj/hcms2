@@ -1,0 +1,16 @@
+export OS_USERNAME=mschyj
+export OS_USER_DOMAIN_NAME=mschyj
+export OS_PROJECT_DOMAIN_NAME=mschyj
+export OS_PASSWORD=1980813c
+export OS_TENANT_NAME=cn-north-1
+export OS_PROJECT_NAME=cn-north-1
+export OS_AUTH_URL=https://iam.cn-north-1.myhwclouds.com/v3
+
+export NOVA_ENDPOINT_TYPE=publicURL
+export OS_ENDPOINT_TYPE=publicURL
+export CINDER_ENDPOINT_TYPE=publicURL
+export OS_VOLUME_API_VERSION=2
+export OS_IDENTITY_API_VERSION=3
+export OS_IMAGE_API_VERSION=2
+
+export OS_AVAILABILITY=cn-north-1a
