@@ -138,6 +138,8 @@ class Start(AbstractCommand):
                             help='Override the values in of the configuration '
                                  'file and starts `N1` nodes of group `GROUP`,'
                                  'N2 of GROUP2 etc...')
+        #parser.add_argument('--no-setup', action="store_true", default=False,
+                            #help="Only start the cluster, do not configure it")        
         parser.add_argument(
             '-p', '--max-concurrent-requests', default=0,
             dest='max_concurrent_requests', type=int, metavar='NUM',
@@ -206,16 +208,17 @@ class Start(AbstractCommand):
             known_hosts_file = "/root/.hwcc/storage/%s.known_hosts"%cluster_name
             yaml_file = "/root/.hwcc/storage/%s.yaml"%cluster_name
             if  os.path.exists(known_hosts_file) and os.path.exists(yaml_file):
-                log.error("create `{0}` failed, please excute recreate `{1}` .".format(cluster.name,cluster.name))
+                log.error("create cluster `{0}` failed, as the cluster is existing, please run 'recreate' command to re-create the cluster .".format(cluster.name))
                 return
             print("Creating cluster `{0}` with:".format(cluster.name))
             for cls in cluster.nodes:
                 print("* {0:d} {1} nodes.".format(len(cluster.nodes[cls]), cls))
-            print("(This may take a while...)")
+            print("(This may take a while...)")     
             min_nodes = dict((kind, cluster_nodes_conf[kind]['min_num'])
                              for kind in cluster_nodes_conf)
             cluster.start(min_nodes, self.params.max_concurrent_requests)
-            if self.params.no_setup:
+            #if self.params.no_setup:
+            if False:       
                 print("NOT configuring the cluster as requested.")
             else:
                 print("Configuring the cluster ...")
@@ -286,14 +289,13 @@ class Restart(AbstractCommand):
         """
         
         cluster_name = self.params.cluster_name
-        print "clusterName: %s"%cluster_name
 
         creator = make_creator(self.params.config,
                                storage_path=self.params.storage)
         known_hosts_file = "/root/.hwcc/storage/%s.known_hosts"%cluster_name
         yaml_file = "/root/.hwcc/storage/%s.yaml"%cluster_name
         if  not os.path.exists(known_hosts_file) and not os.path.exists(yaml_file):
-            log.error("recreate `{0}` failed, please excute create `{1}` first.".format(cluster_name,cluster_name))
+            log.error("recreate cluster `{0}` failed, as the cluster is not existing, please run 'create' command to create the cluster first.".format(cluster_name))
             return          
         cluster_template_info = os.popen("grep  template %s"%yaml_file).read()
         cluster_template = re.split(r'\s', cluster_template_info)[1]
