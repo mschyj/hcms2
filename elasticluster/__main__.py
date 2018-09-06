@@ -35,18 +35,19 @@ from pkg_resources import resource_filename
 from elasticluster import log
 from elasticluster.subcommands import (
     AbstractCommand,
-    ExportCluster,
-    ImportCluster,
+    #ExportCluster,
+    #ImportCluster,
     ListClusters,
     ListNodes,
     ListTemplates,
-    RemoveNode,
-    ResizeCluster,
+    #RemoveNode,
+    #ResizeCluster,
     SetupCluster,
-    SftpFrontend,
+    #SftpFrontend,
     SshFrontend,
     Start,
     Stop,
+    Restart,
 )
 from elasticluster.conf import Creator
 from elasticluster.exceptions import ConfigurationError
@@ -61,8 +62,8 @@ __author__ = ', '.join([
 
 
 class ElastiCluster(cli.app.CommandLineApp):
-    name = "hwcc"
-    description = "hwcc starts, stops, grows, and shrinks clusters on a cloud."
+    name = "hwcc"       
+    description = "hwcc creates, and destroys clusters on a cloud."
 
     default_configuration_file = os.path.expanduser(
         "~/.hwcc/config")
@@ -74,7 +75,7 @@ class ElastiCluster(cli.app.CommandLineApp):
         self.add_param('-v', '--verbose', action='count', default=0,
                        help="Increase verbosity. If at least four `-v` option "
                        "are given, hwcc will create new VMs "
-                       "sequentially instead of doing it in parallel.")
+                       "sequentially instead of doing it in parallel.")     
         self.add_param('-s', '--storage', metavar="PATH",
                        help="Path to the storage folder. (Default: `%(default)s`",
                        default=Creator.DEFAULT_STORAGE_PATH)
@@ -92,18 +93,19 @@ class ElastiCluster(cli.app.CommandLineApp):
         # if you add an object here, make sure it implements the
         # subcommands.abstract_command contract
         commands = [Start(self.params),
+                    Restart(self.params),
                     Stop(self.params),
                     ListClusters(self.params),
                     ListNodes(self.params),
                     ListTemplates(self.params),
                     SetupCluster(self.params),
-                    ResizeCluster(self.params),
+                  #  ResizeCluster(self.params),
                     SshFrontend(self.params),
-                    SftpFrontend(self.params),
-                    MigrationCommand(self.params),
-                    RemoveNode(self.params),
-                    ExportCluster(self.params),
-                    ImportCluster(self.params),
+                #SftpFrontend(self.params),
+                 #   MigrationCommand(self.params),
+                  #  RemoveNode(self.params),
+                  #  ExportCluster(self.params),
+                   # ImportCluster(self.params),
                     ]
 
         # to parse subcommands
