@@ -126,7 +126,126 @@ class Start(AbstractCommand):
 
     def setup(self, subparsers):
         parser = subparsers.add_parser(
-            "start", help="Create a cluster using the supplied configuration.",
+            "create", help="Create a cluster using the supplied configuration.",
+            description=self.__doc__)
+        parser.set_defaults(func=self)
+        parser.add_argument('template',
+                            help="Type of cluster. It refers to a "
+                                 "configuration stanza [cluster/<name>]")
+        parser.add_argument('-n', '--name', dest='cluster_name',
+                            help='Name of the cluster.')
+        parser.add_argument('--nodes', metavar='N1:GROUP[,N2:GROUP2,...]',
+                            help='Override the values in of the configuration '
+                                 'file and starts `N1` nodes of group `GROUP`,'
+                                 'N2 of GROUP2 etc...')
+        parser.add_argument(
+            '-p', '--max-concurrent-requests', default=0,
+            dest='max_concurrent_requests', type=int, metavar='NUM',
+            help=("Try to start at most NUM nodes at the same time."
+                  " Set to 1 to avoid making multiple requests"
+                  " to the cloud controller and start nodes sequentially."
+                  " The special value `0` (default) means: start up to"
+                  " 4 independent requests per CPU core."))
+
+    def pre_run(self):
+        self.params.nodes_override = {}
+        if self.params.nodes:
+            nodes = self.params.nodes.split(',')
+            for nspec in nodes:
+                n, kind = nspec.split(':')
+                try:
+                    n = int(n)
+                except (ValueError, TypeError) as err:
+                    raise ConfigurationError(
+                        "Invalid syntax for option `--nodes`: "
+                        "cannot convert `{n}` to integer: {err}"
+                        .format(n=n, err=err))
+                self.params.nodes_override[kind] = n
+
+    def execute(self):
+        """
+        Starts a new cluster.
+        """
+
+        cluster_template = self.params.template
+        if self.params.cluster_name:
+            cluster_name = self.params.cluster_name
+        else:
+            cluster_name = self.params.template
+
+        creator = make_creator(self.params.config,
+                               storage_path=self.params.storage)
+
+        if cluster_template not in creator.cluster_conf:
+            raise ClusterNotFound(
+                "No cluster template named `{0}`"
+                .format(cluster_template))
+
+        # possibly overwrite node mix from config
+        cluster_nodes_conf = creator.cluster_conf[cluster_template]['nodes']
+        for kind, num in self.params.nodes_override.iteritems():
+            if kind not in cluster_nodes_conf:
+                raise ConfigurationError(
+                    "No node group `{kind}` defined"
+                    " in cluster template `{template}`"
+                    .format(kind=kind, template=cluster_template))
+            cluster_nodes_conf[kind]['num'] = num
+
+        # First, check if the cluster is already created.
+        try:
+            cluster = creator.load_cluster(cluster_name)
+        except ClusterNotFound:
+            try:
+                cluster = creator.create_cluster(
+                    cluster_template, cluster_name)
+            except ConfigurationError as err:
+                log.error("Creating cluster %s: %s", cluster_template, err)
+                return
+
+        try:
+            known_hosts_file = "%s.known_hosts"%cluster.name
+            yaml_file = "%s.yml"%cluster.name
+            files =  os.popen("ls /root/.hwcc/storage/").read()    
+            files = re.split(r'\s',files)
+            if  known_hosts_file in files or yaml_file in files:
+                log.error("create `{0}` failed, please excute recreate `{1}` .".format(cluster.name,cluster.name))
+                return
+            print("Creating cluster `{0}` with:".format(cluster.name))
+            for cls in cluster.nodes:
+                print("* {0:d} {1} nodes.".format(len(cluster.nodes[cls]), cls))
+            print("(This may take a while...)")
+            min_nodes = dict((kind, cluster_nodes_conf[kind]['min_num'])
+                             for kind in cluster_nodes_conf)
+            cluster.start(min_nodes, self.params.max_concurrent_requests)
+            if self.params.no_setup:
+                print("NOT configuring the cluster as requested.")
+            else:
+                print("Configuring the cluster ...")
+                print("(this too may take a while)")
+                ok = cluster.setup()
+                if ok:
+                    print(
+                        "\nYour cluster `{0}` is ready!"
+                        .format(cluster.name))
+                    print(cluster_summary(cluster))
+                else:
+                    print(
+                        "\nWARNING: YOUR CLUSTER `{0}` IS NOT READY YET!"
+                        .format(cluster.name))
+            #print(cluster_summary(cluster))
+        except (KeyError, ImageError, SecurityGroupError, ClusterError) as err:
+            log.error("Could not start cluster `%s`: %s", cluster.name, err)
+            raise
+
+
+class Restart(AbstractCommand):
+    """
+    Create a new cluster using the given cluster template.
+    """
+
+    def setup(self, subparsers):
+        parser = subparsers.add_parser(
+            "recreate", help="Recreate a cluster using the supplied configuration.",
             description=self.__doc__)
         parser.set_defaults(func=self)
         parser.add_argument('template',
@@ -201,11 +320,18 @@ class Start(AbstractCommand):
                 cluster = creator.create_cluster(
                     cluster_template, cluster_name)
             except ConfigurationError as err:
-                log.error("Starting cluster %s: %s", cluster_template, err)
+                log.error("Creating cluster %s: %s", cluster_template, err)
                 return
 
         try:
-            print("Starting cluster `{0}` with:".format(cluster.name))
+            known_hosts_file = "%s.known_hosts"%cluster.name
+            yaml_file = "%s.yml"%cluster.name
+            files =  os.popen("ls /root/.hwcc/storage/").read()    
+            files = re.split(r'\s',files)
+            if  known_hosts_file not in files and yaml_file not in files:
+                log.error("recreate `{0}` failed, please excute create `{1}` first.".format(cluster.name,cluster.name))
+                return         
+            print("Recreating cluster `{0}` with:".format(cluster.name))
             for cls in cluster.nodes:
                 print("* {0:d} {1} nodes.".format(len(cluster.nodes[cls]), cls))
             print("(This may take a while...)")
@@ -243,7 +369,7 @@ class Stop(AbstractCommand):
         @see abstract_command contract
         """
         parser = subparsers.add_parser(
-            "stop", help="Stop a cluster and all associated VM instances.",
+            "destroy", help="Destroy a cluster and all associated VM instances.",
             description=self.__doc__)
         parser.set_defaults(func=self)
         parser.add_argument('clustername', help='name of the cluster')
@@ -271,7 +397,7 @@ class Stop(AbstractCommand):
 
         if not self.params.yes:
             confirm_or_abort(
-                "Do you want really want to stop cluster `{cluster_name}`?"
+                "Do you want really want to destroy cluster `{cluster_name}`?"
                 .format(cluster_name=cluster_name),
                 msg="Aborting upon user request.")
         print("Destroying cluster `%s` ..." % cluster_name)
@@ -780,61 +906,61 @@ class SshFrontend(AbstractCommand):
         os.execlp("ssh", *ssh_cmdline)
 
 
-class SftpFrontend(AbstractCommand):
-    """
-    Open an SFTP session to the cluster frontend host.
-    """
+#class SftpFrontend(AbstractCommand):
+    #"""
+    #Open an SFTP session to the cluster frontend host.
+    #"""
 
-    def setup(self, subparsers):
-        parser = subparsers.add_parser(
-            "sftp",
-            help="Open an SFTP session to the cluster frontend host.",
-            description=self.__doc__)
-        parser.set_defaults(func=self)
-        parser.add_argument('clustername', help='name of the cluster')
-        parser.add_argument('-n', '--node', metavar='HOSTNAME', dest='ssh_to',
-                            help="Name of node you want to ssh to. By "
-                            "default, the first node of the `ssh_to` option "
-                            "group is used.")
-        parser.add_argument('sftp_args', metavar='args', nargs='*',
-                            help="Arguments to pass to ftp, instead of "
-                                 "opening an interactive shell.")
+    #def setup(self, subparsers):
+        #parser = subparsers.add_parser(
+            #"sftp",
+            #help="Open an SFTP session to the cluster frontend host.",
+            #description=self.__doc__)
+        #parser.set_defaults(func=self)
+        #parser.add_argument('clustername', help='name of the cluster')
+        #parser.add_argument('-n', '--node', metavar='HOSTNAME', dest='ssh_to',
+                            #help="Name of node you want to ssh to. By "
+                            #"default, the first node of the `ssh_to` option "
+                            #"group is used.")
+        #parser.add_argument('sftp_args', metavar='args', nargs='*',
+                            #help="Arguments to pass to ftp, instead of "
+                                 #"opening an interactive shell.")
 
-    def execute(self):
-        creator = make_creator(self.params.config,
-                               storage_path=self.params.storage)
-        cluster_name = self.params.clustername
-        try:
-            cluster = creator.load_cluster(cluster_name)
-            cluster.update()
-        except (ClusterNotFound, ConfigurationError) as ex:
-            log.error("Setting up cluster %s: %s", cluster_name, ex)
-            return
+    #def execute(self):
+        #creator = make_creator(self.params.config,
+                               #storage_path=self.params.storage)
+        #cluster_name = self.params.clustername
+        #try:
+            #cluster = creator.load_cluster(cluster_name)
+            #cluster.update()
+        #except (ClusterNotFound, ConfigurationError) as ex:
+            #log.error("Setting up cluster %s: %s", cluster_name, ex)
+            #return
 
-        # XXX: the default value of `self.params.ssh_to` should = the
-        # default value for `ssh_to` in `Cluster.get_ssh_to_node()`
-        frontend = cluster.get_ssh_to_node(self.params.ssh_to)
+        ## XXX: the default value of `self.params.ssh_to` should = the
+        ## default value for `ssh_to` in `Cluster.get_ssh_to_node()`
+        #frontend = cluster.get_ssh_to_node(self.params.ssh_to)
 
-        host = frontend.connection_ip()
-        if not host:
-            log.error("No IP address known for node %s", frontend.name)
-            sys.exit(1)
+        #host = frontend.connection_ip()
+        #if not host:
+            #log.error("No IP address known for node %s", frontend.name)
+            #sys.exit(1)
 
-        addr, port = parse_ip_address_and_port(host)
-        username = frontend.image_user
-        knownhostsfile = (cluster.known_hosts_file if cluster.known_hosts_file
-                          else '/dev/null')
-        sftp_cmdline = [
-            "sftp",
-            #"-P", "{0:d}".format(port),
-            "-o", "Port={0}".format(port),
-            "-o", "UserKnownHostsFile={0}".format(knownhostsfile),
-            "-o", "StrictHostKeyChecking=no",
-            "-o", "IdentityFile={0}".format(frontend.user_key_private),
-        ]
-        sftp_cmdline.extend(self.params.sftp_args)
-        sftp_cmdline.append('{0}@{1}'.format(username, addr))
-        os.execlp("sftp", *sftp_cmdline)
+        #addr, port = parse_ip_address_and_port(host)
+        #username = frontend.image_user
+        #knownhostsfile = (cluster.known_hosts_file if cluster.known_hosts_file
+                          #else '/dev/null')
+        #sftp_cmdline = [
+            #"sftp",
+            ##"-P", "{0:d}".format(port),
+            #"-o", "Port={0}".format(port),
+            #"-o", "UserKnownHostsFile={0}".format(knownhostsfile),
+            #"-o", "StrictHostKeyChecking=no",
+            #"-o", "IdentityFile={0}".format(frontend.user_key_private),
+        #]
+        #sftp_cmdline.extend(self.params.sftp_args)
+        #sftp_cmdline.append('{0}@{1}'.format(username, addr))
+        #os.execlp("sftp", *sftp_cmdline)
 
 
 class GC3PieConfig(AbstractCommand):
