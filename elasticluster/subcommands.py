@@ -203,11 +203,9 @@ class Start(AbstractCommand):
                 return
 
         try:
-            known_hosts_file = "%s.known_hosts"%cluster.name
-            yaml_file = "%s.yml"%cluster.name
-            files =  os.popen("ls /root/.hwcc/storage/").read()    
-            files = re.split(r'\s',files)
-            if  known_hosts_file in files or yaml_file in files:
+            known_hosts_file = "/root/.hwcc/storage/%s.known_hosts"%cluster_name
+            yaml_file = "/root/.hwcc/storage/%s.yaml"%cluster_name
+            if  os.path.exists(known_hosts_file) and os.path.exists(yaml_file):
                 log.error("create `{0}` failed, please excute recreate `{1}` .".format(cluster.name,cluster.name))
                 return
             print("Creating cluster `{0}` with:".format(cluster.name))
@@ -248,11 +246,10 @@ class Restart(AbstractCommand):
             "recreate", help="Recreate a cluster using the supplied configuration.",
             description=self.__doc__)
         parser.set_defaults(func=self)
-        parser.add_argument('template',
-                            help="Type of cluster. It refers to a "
-                                 "configuration stanza [cluster/<name>]")
-        parser.add_argument('-n', '--name', dest='cluster_name',
-                            help='Name of the cluster.')
+        parser.add_argument('cluster_name',
+                            help="Name of the cluster.")
+        #parser.add_argument('-n', '--name', dest='cluster_name',
+                            #help='Name of the cluster.')
         parser.add_argument('--nodes', metavar='N1:GROUP[,N2:GROUP2,...]',
                             help='Override the values in of the configuration '
                                  'file and starts `N1` nodes of group `GROUP`,'
@@ -285,23 +282,21 @@ class Restart(AbstractCommand):
 
     def execute(self):
         """
-        Starts a new cluster.
+        Restarts a cluster.
         """
-
-        cluster_template = self.params.template
-        if self.params.cluster_name:
-            cluster_name = self.params.cluster_name
-        else:
-            cluster_name = self.params.template
+        
+        cluster_name = self.params.cluster_name
+        print "clusterName: %s"%cluster_name
 
         creator = make_creator(self.params.config,
                                storage_path=self.params.storage)
-
-        if cluster_template not in creator.cluster_conf:
-            raise ClusterNotFound(
-                "No cluster template named `{0}`"
-                .format(cluster_template))
-
+        known_hosts_file = "/root/.hwcc/storage/%s.known_hosts"%cluster_name
+        yaml_file = "/root/.hwcc/storage/%s.yaml"%cluster_name
+        if  not os.path.exists(known_hosts_file) and not os.path.exists(yaml_file):
+            log.error("recreate `{0}` failed, please excute create `{1}` first.".format(cluster_name,cluster_name))
+            return          
+        cluster_template_info = os.popen("grep  template %s"%yaml_file).read()
+        cluster_template = re.split(r'\s', cluster_template_info)[1]
         # possibly overwrite node mix from config
         cluster_nodes_conf = creator.cluster_conf[cluster_template]['nodes']
         for kind, num in self.params.nodes_override.iteritems():
@@ -323,14 +318,7 @@ class Restart(AbstractCommand):
                 log.error("Creating cluster %s: %s", cluster_template, err)
                 return
 
-        try:
-            known_hosts_file = "%s.known_hosts"%cluster.name
-            yaml_file = "%s.yml"%cluster.name
-            files =  os.popen("ls /root/.hwcc/storage/").read()    
-            files = re.split(r'\s',files)
-            if  known_hosts_file not in files and yaml_file not in files:
-                log.error("recreate `{0}` failed, please excute create `{1}` first.".format(cluster.name,cluster.name))
-                return         
+        try:       
             print("Recreating cluster `{0}` with:".format(cluster.name))
             for cls in cluster.nodes:
                 print("* {0:d} {1} nodes.".format(len(cluster.nodes[cls]), cls))
