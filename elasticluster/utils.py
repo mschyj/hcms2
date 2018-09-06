@@ -49,7 +49,12 @@ def confirm_or_abort(prompt, exitcode=os.EX_TEMPFAIL, msg=None, **extra_args):
     :param str msg: Message to display before exiting.
     """
     if click.confirm(prompt, **extra_args):
-        return True
+        ans = raw_input("Attention:\nThe cluster with all machines will be deleted and could not be recoverable.\nPlease confirm your choice with key word: \"delete\" or the programe will exit: ")
+        if ans not in ['delete']:
+          print("Aborting upon user request.")
+          sys.exit(exitcode)
+        else:
+          return True
     else:
         # abort
         if msg:
