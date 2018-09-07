@@ -368,12 +368,9 @@ class Stop(AbstractCommand):
                                  " have been terminated properly.")
         parser.add_argument('--wait', action="store_true", default=False,
                             help="Wait for all nodes to be properly terminated.")
-        #parser.add_argument('--yes', '-y', action="store_true", default=False,
-                            #help="Assume `yes` to all queries and "
-                                 #"do not prompt.")
-        parser.add_argument('--delete',  action="store_true", default=False,
-                        help="Assume `yes` to all queries and "
-                                                "do not prompt.")                                 
+        parser.add_argument('--yes', '-y', action="store_true", default=False,
+                            help="Assume `yes` to all queries and "
+                                 "do not prompt.")
 
     def execute(self):
         """
@@ -388,7 +385,7 @@ class Stop(AbstractCommand):
             log.error("Cannot stop cluster `%s`: %s", cluster_name, err)
             return os.EX_NOINPUT
 
-        if not self.params.delete:
+        if not self.params.yes:
             confirm_or_abort(
                 "Do you want really want to delete cluster `{cluster_name}`?"
                 .format(cluster_name=cluster_name),

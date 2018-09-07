@@ -955,7 +955,7 @@ class Cluster(Struct):
 
         if not ret:
             log.warning(
-                "Cluster `%s` not yet configured. Please"
+                "Cluster `%s` not yet configured. Please "
                 "check your configuration",
                 self.name)
 
