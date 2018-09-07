@@ -566,8 +566,8 @@ class Cluster(Struct):
             return set(node for node, ok
                        in itertools.izip(nodes, result.get()) if ok)
 
-    @staticmethod
-    def _start_node(node):
+    #@staticmethod
+    def _start_node(self, node):
         """
         Start the given node VM.
 
@@ -584,10 +584,31 @@ class Cluster(Struct):
             try:
                 node.start()
                 log.info("Node `%s` has been started.", node.name)
-                return True
+                return True     
             except Exception as err:
                 log.exception("Could not start node `%s`: %s -- %s",
                               node.name, err, err.__class__)
+                # image error
+                if 'ImageError' in str(err.__class__):
+                    log.warn("Please correct your image config and run `hwcc delete %s; hwcc create  %s -n %s` to re-create the cluster"%(self.name,self.template,self.name))
+                # security group error
+                if 'SecurityGroupError' in str(err.__class__):
+                    log.warn("Please correct your security group config and run `hwcc delete %s; hwcc create %s -n %s` to re-create the cluster"%(self.name,self.template,self.name))
+                # subnet error
+                if 'SubnetError' in str(err.__class__):
+                    log.warn("Please correct your security group config and run `hwcc delete %s; hwcc create %s -n %s` to re-create the cluster"%(self.name,self.template, self.name) )               
+                # flavor error
+                if 'FlavorError' in str(err.__class__):
+                    log.warn("Please correct your flavor config and run `hwcc delete %s; hwcc create %s -n %s` to re-create the cluster"%(self.name,self.template, self.name) )                               
+                # keypair error
+                if 'KeypairError' in str(err.__class__):
+                    log.warn("Please correct your keypair config and run `hwcc delete %s; hwcc create %s -n %s` to re-create the cluster"%(self.name,self.template, self.name) )               
+                # network uuid
+                if 'Bad networks format' in str(err):
+                    log.warn("Please correct your network ids config and run `hwcc delete %s; hwcc create %s -n %s` to re-create the cluster"%(self.name,self.template, self.name) )
+                # available zone
+                if 'availability zone is not available' in str(err):
+                    log.warn("Please correct your available zone config and run `hwcc delete %s; hwcc create %s -n %s` to re-create the cluster"%(self.name,self.template, self.name) )                    
                 return False
 
     def _check_starting_nodes(self, nodes, lapse):
@@ -780,7 +801,7 @@ class Cluster(Struct):
                 self.repository.save_or_update(self)
                 log.warning(
                     "Not all cluster nodes have been terminated."
-                    " Fix errors above and re-run `elasticluster stop %s`",
+                    " Fix errors above and re-run `hwcc delete %s`",
                     self.name)
         else:
             self._delete_saved_data()
@@ -934,9 +955,9 @@ class Cluster(Struct):
 
         if not ret:
             log.warning(
-                "Cluster `%s` not yet configured. Please, re-run "
-                "`elasticluster setup %s` and/or check your configuration",
-                self.name, self.name)
+                "Cluster `%s` not yet configured. Please"
+                "check your configuration",
+                self.name)
 
         return ret
 
@@ -1230,7 +1251,7 @@ class Node(Struct):
         """
         log.info("Starting node `%s` from image `%s` with flavor %s ...",
                  self.name, self.image_id, self.flavor)
-        
+        self.extra['cluster_name'] = self.cluster_name
         self.instance_id = self._cloud_provider.start_instance(
             self.user_key_name, self.user_key_public, self.user_key_private,
             self.security_group,

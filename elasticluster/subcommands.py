@@ -359,7 +359,7 @@ class Stop(AbstractCommand):
         @see abstract_command contract
         """
         parser = subparsers.add_parser(
-            "destroy", help="Destroy a cluster and all associated VM instances.",
+            "delete", help="Delete a cluster and all associated VM instances.",
             description=self.__doc__)
         parser.set_defaults(func=self)
         parser.add_argument('clustername', help='name of the cluster')
@@ -368,9 +368,12 @@ class Stop(AbstractCommand):
                                  " have been terminated properly.")
         parser.add_argument('--wait', action="store_true", default=False,
                             help="Wait for all nodes to be properly terminated.")
-        parser.add_argument('--yes', '-y', action="store_true", default=False,
-                            help="Assume `yes` to all queries and "
-                                 "do not prompt.")
+        #parser.add_argument('--yes', '-y', action="store_true", default=False,
+                            #help="Assume `yes` to all queries and "
+                                 #"do not prompt.")
+        parser.add_argument('--delete',  action="store_true", default=False,
+                        help="Assume `yes` to all queries and "
+                                                "do not prompt.")                                 
 
     def execute(self):
         """
@@ -385,12 +388,13 @@ class Stop(AbstractCommand):
             log.error("Cannot stop cluster `%s`: %s", cluster_name, err)
             return os.EX_NOINPUT
 
-        if not self.params.yes:
+        if not self.params.delete:
             confirm_or_abort(
-                "Do you want really want to destroy cluster `{cluster_name}`?"
+                "Do you want really want to delete cluster `{cluster_name}`?"
                 .format(cluster_name=cluster_name),
                 msg="Aborting upon user request.")
-        print("Destroying cluster `%s` ..." % cluster_name)
+                
+        print("Deleting cluster `%s` ..." % cluster_name)
         cluster.stop(force=self.params.force, wait=self.params.wait)
 
 
