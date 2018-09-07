@@ -205,8 +205,8 @@ class Start(AbstractCommand):
                 return
 
         try:
-            known_hosts_file = "/root/.hwcc/storage/%s.known_hosts"%cluster_name
-            yaml_file = "/root/.hwcc/storage/%s.yaml"%cluster_name
+            known_hosts_file = "%s/%s.known_hosts"%(self.params.storage,cluster_name)
+            yaml_file = "%s/%s.yaml"%(self.params.storage,cluster_name)
             if  os.path.exists(known_hosts_file) and os.path.exists(yaml_file):
                 log.error("create cluster `{0}` failed, as the cluster is existing, please run 'recreate' command to re-create the cluster .".format(cluster.name))
                 return
@@ -292,8 +292,8 @@ class Restart(AbstractCommand):
 
         creator = make_creator(self.params.config,
                                storage_path=self.params.storage)
-        known_hosts_file = "/root/.hwcc/storage/%s.known_hosts"%cluster_name
-        yaml_file = "/root/.hwcc/storage/%s.yaml"%cluster_name
+        known_hosts_file = "%s/%s.known_hosts"%(self.params.storage,cluster_name)
+        yaml_file = "%s/%s.yaml"%(self.params.storage,cluster_name)
         if  not os.path.exists(known_hosts_file) and not os.path.exists(yaml_file):
             log.error("recreate cluster `{0}` failed, as the cluster is not existing, please run 'create' command to create the cluster first.".format(cluster_name))
             return          
