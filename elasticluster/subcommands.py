@@ -103,18 +103,8 @@ Default ssh to node: %s
     for cls in cluster.nodes:
         msg += "- %s nodes: %d\n" % (cls, len(cluster.nodes[cls]))
     msg += """
-To login on the frontend node, run the command:
-
-    hwcc ssh %s
-
-To upload or download files to the cluster, use the command:
-
-    hwcc sftp %s
-
-To enable slurm power saving options, use the steps:
-    
-    1:check the config file, make sure the value of global_var_slurm_suspendtime is not -1
-    2:run the script: sh Initslurm.sh
+To login on the frontend node, run the command: "hwcc ssh %s"
+To sftp files to the cluster, use the command: "hwcc sftp %s"
 """ % (cluster.name, cluster.name)
     return msg
 

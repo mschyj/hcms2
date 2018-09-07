@@ -37,7 +37,7 @@ import click
 import netaddr
 
 
-def confirm_or_abort(prompt, exitcode=os.EX_TEMPFAIL, msg=None, **extra_args):
+def confirm_or_abort_delete(prompt, exitcode=os.EX_TEMPFAIL, msg=None, **extra_args):
     """
     Prompt user for confirmation and exit on negative reply.
 
@@ -62,6 +62,25 @@ def confirm_or_abort(prompt, exitcode=os.EX_TEMPFAIL, msg=None, **extra_args):
             sys.stderr.write('\n')
         sys.exit(exitcode)
 
+def confirm_or_abort(prompt, exitcode=os.EX_TEMPFAIL, msg=None, **extra_args):
+    """
+    Prompt user for confirmation and exit on negative reply.
+
+    Arguments `prompt` and `extra_args` will be passed unchanged to
+    `click.confirm`:func: (which is used for actual prompting).
+
+    :param str prompt: Prompt string to display.
+    :param int exitcode: Program exit code if negative reply given.
+    :param str msg: Message to display before exiting.
+    """
+    if click.confirm(prompt, **extra_args):
+        return True
+    else:
+        # abort
+        if msg:
+            sys.stderr.write(msg)
+            sys.stderr.write('\n')
+        sys.exit(exitcode)
 
 @contextmanager
 def environment(**kv):
