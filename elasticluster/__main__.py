@@ -43,7 +43,7 @@ from elasticluster.subcommands import (
     #RemoveNode,
     #ResizeCluster,
     SetupCluster,
-    SftpFrontend,
+    #SftpFrontend,
     SshFrontend,
     Start,
     Stop,
@@ -101,7 +101,7 @@ class ElastiCluster(cli.app.CommandLineApp):
                     SetupCluster(self.params),
                   #  ResizeCluster(self.params),
                     SshFrontend(self.params),
-                SftpFrontend(self.params),
+                #SftpFrontend(self.params),
                  #   MigrationCommand(self.params),
                   #  RemoveNode(self.params),
                   #  ExportCluster(self.params),
@@ -122,7 +122,7 @@ class ElastiCluster(cli.app.CommandLineApp):
         # Hack around http://bugs.python.org/issue9253 ?
         if "--version" in sys.argv:
             import pkg_resources
-            version = pkg_resources.get_distribution("elasticluster").version
+            version = pkg_resources.get_distribution("hwcc").version
             print("hwcc version %s" % version)
             sys.exit(0)
 
