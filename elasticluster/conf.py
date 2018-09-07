@@ -349,8 +349,8 @@ def make_creator(configfiles, storage_path=None):
         raise ValueError('Empty list of config files')
 
     config = load_config_files(configfiles)
-
-    return Creator(config, storage_path=storage_path)
+    config_file = ( configfiles[0] if len(configfiles) != 0 else None )
+    return Creator(config, storage_path=storage_path,config_path=config_file)
 
 
 def _expand_config_file_list(paths, ignore_nonexistent=True,
@@ -913,9 +913,10 @@ class Creator(object):
     """
 
     DEFAULT_STORAGE_PATH = os.path.expanduser("~/.hwcc/storage")
+    DEFAULT_CONFIG_PATH = "~/.hwcc/config"
     DEFAULT_STORAGE_TYPE = 'yaml'
 
-    def __init__(self, conf, storage_path=None, storage_type=None):
+    def __init__(self, conf, storage_path=None, storage_type=None, config_path=None):
         self.cluster_conf = conf['cluster']
 
         self.storage_path = (
@@ -923,7 +924,8 @@ class Creator(object):
             else self.DEFAULT_STORAGE_PATH)
 
         self.storage_type = storage_type or self.DEFAULT_STORAGE_TYPE
-
+        self.config_path = ( config_path if config_path
+            else self.DEFAULT_CONFIG_PATH)
 
     def load_cluster(self, cluster_name):
         """
@@ -1070,8 +1072,8 @@ class Creator(object):
         conf = self.cluster_conf[cluster_template]['setup']
         home = os.environ['HOME']
         self.config = ConfigParser.ConfigParser()
-        self.path = home+"/.hwcc/config"
-        self.config.read(self.path)
+        self.config.read(self.config_path)
+        
         sfs_items = self.config.items("sfs")
         if name:
             conf['cluster_name'] = name
