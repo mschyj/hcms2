@@ -38,7 +38,7 @@ from elasticluster import log
 from elasticluster.conf import make_creator
 from elasticluster.exceptions import ClusterNotFound, ConfigurationError, \
     ImageError, SecurityGroupError, NodeNotFound, ClusterError
-from elasticluster.utils import confirm_or_abort, parse_ip_address_and_port
+from elasticluster.utils import confirm_or_abort, confirm_or_abort_delete, parse_ip_address_and_port
 
 
 class AbstractCommand():
@@ -104,17 +104,9 @@ Default ssh to node: %s
         msg += "- %s nodes: %d\n" % (cls, len(cluster.nodes[cls]))
     msg += """
 To login on the frontend node, run the command:
-
     hwcc ssh %s
-
 To upload or download files to the cluster, use the command:
-
     hwcc sftp %s
-
-To enable slurm power saving options, use the steps:
-    
-    1:check the config file, make sure the value of global_var_slurm_suspendtime is not -1
-    2:run the script: sh Initslurm.sh
 """ % (cluster.name, cluster.name)
     return msg
 
@@ -386,7 +378,7 @@ class Stop(AbstractCommand):
             return os.EX_NOINPUT
 
         if not self.params.yes:
-            confirm_or_abort(
+            confirm_or_abort_delete(
                 "Do you want really want to delete cluster `{cluster_name}`?"
                 .format(cluster_name=cluster_name),
                 msg="Aborting upon user request.")

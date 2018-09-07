@@ -335,8 +335,10 @@ class AnsibleSetupProvider(AbstractSetupProvider):
                     " Node kind `{1}` not defined in cluster!"
                     .format(node.name, node.kind))
                 continue
-
-            extra_vars = ['ansible_user=%s' % node.image_user]
+           
+            extra_vars = ['ansible_user=%s' % node.image_user] 
+            user_client_ip = get_user_client_ip()
+            extra_vars.append('user_client_ip=%s' % user_client_ip)
 
             ip_addr, port = parse_ip_address_and_port(node.preferred_ip)
             if port != 22:
@@ -404,3 +406,17 @@ class AnsibleSetupProvider(AbstractSetupProvider):
         # option `ssh_pipelining` was added.
         if 'ssh_pipelining' not in state:
             self.ssh_pipelining = True
+
+import socket
+
+def get_user_client_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+    finally:
+        s.close()
+    return ip
+
+if __name__ == '__main__':
+    print(get_user_client_ip())
