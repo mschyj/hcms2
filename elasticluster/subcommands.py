@@ -38,7 +38,7 @@ from elasticluster import log
 from elasticluster.conf import make_creator
 from elasticluster.exceptions import ClusterNotFound, ConfigurationError, \
     ImageError, SecurityGroupError, NodeNotFound, ClusterError
-from elasticluster.utils import confirm_or_abort, parse_ip_address_and_port
+from elasticluster.utils import confirm_or_abort, confirm_or_abort_delete, parse_ip_address_and_port
 
 
 class AbstractCommand():
@@ -376,7 +376,7 @@ class Stop(AbstractCommand):
             return os.EX_NOINPUT
 
         if not self.params.yes:
-            confirm_or_abort(
+            confirm_or_abort_delete(
                 "Do you want really want to delete cluster `{cluster_name}`?"
                 .format(cluster_name=cluster_name),
                 msg="Aborting upon user request.")
