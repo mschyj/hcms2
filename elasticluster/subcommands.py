@@ -241,7 +241,7 @@ class Restart(AbstractCommand):
             "recreate", help="Recreate a cluster using the supplied configuration.",
             description=self.__doc__)
         parser.set_defaults(func=self)
-        parser.add_argument('cluster_name',
+        parser.add_argument('clustername',
                             help="Name of the cluster.")
         #parser.add_argument('-n', '--name', dest='cluster_name',
                             #help='Name of the cluster.')
