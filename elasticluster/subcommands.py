@@ -249,8 +249,8 @@ class Restart(AbstractCommand):
                             help='Override the values in of the configuration '
                                  'file and starts `N1` nodes of group `GROUP`,'
                                  'N2 of GROUP2 etc...')
-        #parser.add_argument('--no-setup', action="store_true", default=False,
-        #                    help="Only start the cluster, do not configure it")
+        parser.add_argument('--no-setup', action="store_true", default=False,
+                            help="Only start the cluster, do not configure it")
         parser.add_argument(
             '-p', '--max-concurrent-requests', default=0,
             dest='max_concurrent_requests', type=int, metavar='NUM',
