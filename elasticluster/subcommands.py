@@ -740,12 +740,13 @@ class ListNodes(AbstractCommand):
         parser.add_argument('--pretty-json', action='store_true',
                             help="Produce *indented* JSON output "
                             "(more human readable than --json)")
-        parser.add_argument(
-            '-u', '--update', action='store_true', default=False,
-            help="By default `hwcc list-nodes` will not contact the "
-                 "EC2 provider to get up-to-date information, unless `-u` "
-                 "option is given.")
-
+        ##chenyjie-beging to remove --update
+        ##parser.add_argument(
+        ##    '-u', '--update', action='store_true', default=False,
+        ##    help="By default `hwcc list-nodes` will not contact the "
+        ##         "EC2 provider to get up-to-date information, unless `-u` "
+        ##         "option is given.")
+        ##chenyjie-end to remove --update
     def execute(self):
         """
         Lists all nodes within the specified cluster with certain
