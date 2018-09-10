@@ -280,7 +280,7 @@ class Restart(AbstractCommand):
         Restarts a cluster.
         """
         
-        cluster_name = self.params.cluster_name
+        cluster_name = self.params.clustername
 
         creator = make_creator(self.params.config,
                                storage_path=self.params.storage)
