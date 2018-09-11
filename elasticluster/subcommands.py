@@ -577,11 +577,29 @@ class ResizeCluster(AbstractCommand):
             if not self.params.yes:
                 confirm_or_abort("Do you really want to remove them?",
                                  msg="Aborting upon user request.")
-
+            
+            node_information = {}
+            frontend_node = cluster.get_ssh_to_node()
+            ssh = frontend_node.connect()
+            if not ssh:
+                log.error("Unable to connect to node %s", node.name)
+                return
+            (_in, _out, _err) = ssh.exec_command("(type >& /dev/null -a srun && echo slurm) \
+                          || (type >& /dev/null -a qconf && echo sge) \
+                          || (type >& /dev/null -a pbsnodes && echo pbs) \
+                          || echo UNKNOWN")
+            node_information['type'] = _out.read().strip()
             for node in to_remove:
                 cluster.nodes[grp].remove(node)
                 node.stop()
-
+                if node_information['type'] == 'sge':
+                   ssh.exec_command("qconf -dh " + node.name)
+                   ssh.exec_command("qconf -ds " + node.name)
+                   ssh.exec_command("qconf -dconf " + node.name)
+                   ssh.exec_command("qconf -dattr hostgroup hostlist " + node.name + " @allhosts")
+                   ssh.exec_command("qconf -dattr queue hostlist " + node.name + " all.q")
+                   ssh.exec_command("qconf -de " + node.name)
+            ssh.close()
         cluster.start()
         if self.params.no_setup:
             print("NOT configuring the cluster as requested.")
