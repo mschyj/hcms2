@@ -245,10 +245,10 @@ class Restart(AbstractCommand):
                             help="Name of the cluster.")
         #parser.add_argument('-n', '--name', dest='cluster_name',
                             #help='Name of the cluster.')
-        parser.add_argument('--nodes', metavar='N1:GROUP[,N2:GROUP2,...]',
-                            help='Override the values in of the configuration '
-                                 'file and starts `N1` nodes of group `GROUP`,'
-                                 'N2 of GROUP2 etc...')
+        #parser.add_argument('--nodes', metavar='N1:GROUP[,N2:GROUP2,...]',
+        #                    help='Override the values in of the configuration '
+        #                         'file and starts `N1` nodes of group `GROUP`,'
+        #                         'N2 of GROUP2 etc...')
         parser.add_argument('--no-setup', action="store_true", default=False,
                             help="Only start the cluster, do not configure it")
         parser.add_argument(
@@ -758,13 +758,11 @@ class ListNodes(AbstractCommand):
         parser.add_argument('--pretty-json', action='store_true',
                             help="Produce *indented* JSON output "
                             "(more human readable than --json)")
-        ##chenyjie-beging to remove --update
-        ##parser.add_argument(
-        ##    '-u', '--update', action='store_true', default=False,
-        ##    help="By default `hwcc list-nodes` will not contact the "
-        ##         "EC2 provider to get up-to-date information, unless `-u` "
-        ##         "option is given.")
-        ##chenyjie-end to remove --update
+        parser.add_argument(
+            '-u', '--update', action='store_true', default=False,
+            help="By default `hwcc list-nodes` will not contact the "
+                 "clould provider to get up-to-date information, unless `-u` "
+                 "option is given.")
     def execute(self):
         """
         Lists all nodes within the specified cluster with certain

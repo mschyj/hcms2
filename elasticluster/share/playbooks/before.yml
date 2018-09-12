@@ -24,3 +24,9 @@
         validate_certs: '{{ not insecure_https_downloads|default("no")|bool }}'
     - name: Setup internal repo for cluster
       action: shell source /etc/yum.repos.d/mirrors_source.sh
+    - name: Disable epel gpg checking(set gpgcheck=0)
+      #action: shell sed -i 's/^gpgcheck=1/gpgcheck=0/g' /etc/yum.repos.d/epel.repo
+      replace:
+        dest: /etc/yum.repos.d/epel.repo
+        regexp: '^gpgcheck=1'
+        replace: 'gpgcheck=0'
