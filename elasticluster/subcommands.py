@@ -458,7 +458,7 @@ class ResizeCluster(AbstractCommand):
                   "" % (self.params.nodes_to_add[grp], grp))
             #begin:chenyjie:add confirm for adding nodes
             if not self.params.yes:
-               confirm_or_abort("Do you really want to add them?",
+               confirm_or_abort("Warning: resizing the cluster may broken the running job.\nPlease save your work before resizing.\nDo you really want to add them?",
                                  msg="Aborting upon user request.")
             #end:chenyjie:add confirm for adding nodes
             # Currently we can't save which template was used to setup a
@@ -581,7 +581,7 @@ class ResizeCluster(AbstractCommand):
             print("    " + str.join("\n    ", [n.name for n in to_remove]))
 
             if not self.params.yes:
-                confirm_or_abort("Do you really want to remove them?",
+                confirm_or_abort("Warning: resizing the cluster may broken the running job.\nPlease save your work before resizing.\nDo you really want to remove them?",
                                  msg="Aborting upon user request.")
             
             node_information = {}
