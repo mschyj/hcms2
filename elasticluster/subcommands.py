@@ -262,7 +262,10 @@ class Restart(AbstractCommand):
 
     def pre_run(self):
         self.params.nodes_override = {}
-        if self.params.nodes:
+        #begin by chenyjie--ignore pre_run
+        if 1 == 0:
+        #if self.params.nodes:
+        #end by chenyjie--ignore pre_run
             nodes = self.params.nodes.split(',')
             for nspec in nodes:
                 n, kind = nspec.split(':')
@@ -531,7 +534,10 @@ class ResizeCluster(AbstractCommand):
                 add_master_num = 0
                 master_add_ip = []
                 master_on_cloud = True
-                master_on_cloud_str = conf_kind['extra']['master_on_cloud']
+                #start by chenyjie-temporary workround for extra value
+                #master_on_cloud_str = conf_kind['extra']['master_on_cloud']
+                master_on_cloud_str = True
+                #end by chenyjie
                 if master_on_cloud_str == "False" or master_on_cloud_str == "false":
                     master_on_cloud = False
                 for i in range(self.params.nodes_to_add[grp]):
