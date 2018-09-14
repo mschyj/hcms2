@@ -1,0 +1,144 @@
+#=======================================================================================================================
+# Notes:
+#   1:Do not change the session name, if you want to change it , please ask the developer for help
+#   2:Please follow the guide to change the values for each parameter
+#   3:Please generate your private ssh key by "ssh-keygen -t rsa", use the default directory to store the key files 
+#=======================================================================================================================
+#The session for Cloud logon informtion
+#The username/password are encrypted,please use "Inithwcc.sh" to config them.
+[cloud/hwc]
+provider = openstack
+auth_url = https://iam.cn-east-2.myhwclouds.com/v3
+username = cabc2558a81d512f49dac66bcab6e441
+password = c0c9d9e425d6c7faa1a506ccd0226f55
+project_name = cn-east-2
+region_name = cn-east-2
+project_domain_name = yanjiao
+user_domain_name = yanjiao
+#The session for Cluster node logon information
+[login/linux]
+image_user = root
+user_key_name = key-hwcc-7
+user_key_private = /root/.ssh/id_rsa
+user_key_public = /root/.ssh/id_rsa.pub
+#The session for SFS
+#SFS is used for shared storage, please create sfs on the cloud before creating the cluster
+[sfs]
+sfs_mount_url = sfs-nas1.cn-east-2.myhuaweicloud.com:/share-b4148c14
+sfs_mount_point = /sfs-hwcc
+#General setup information for the slurm cluster
+[setup/ansible-slurm]
+provider = ansible
+master_groups = slurm_master
+worker_groups = slurm_worker
+global_var_user_client_ip = 192.168.0.200
+global_var_chess_enabled = false
+global_var_nfs_enabled = false
+global_var_multiuser_cluster = false
+global_var_upgrade_packages = false
+global_var_slurm_suspendtime = -1
+#General setup information for the SGE cluster
+[setup/ansible-gridengine]
+provider = ansible
+master_groups = gridengine_master
+worker_groups = gridengine_worker
+global_var_user_client_ip = 192.168.0.200
+global_var_nfs_enabled = false
+global_var_multiuser_cluster = false
+global_var_upgrade_packages = false
+#General setup information for the Torque cluster
+[setup/ansible-torque]
+provider = ansible
+master_groups = pbs_master,maui_master
+worker_groups = pbs_clients
+global_var_user_client_ip = 192.168.0.200
+global_var_nfs_enabled = true
+global_var_multiuser_cluster = true
+global_var_upgrade_packages = false
+#General setup information for the PBSPro cluster
+[setup/ansible-pbspro]
+provider = ansible
+master_groups = pbspro_master
+worker_groups = pbspro_clients
+global_var_user_client_ip = 192.168.0.200
+global_var_nfs_enabled = true
+global_var_multiuser_cluster = true
+global_var_upgrade_packages = false
+#The session to define slurm cluster
+[cluster/slurm]
+cloud = hwc
+login = linux
+setup = ansible-slurm
+security_group = security-hwcc
+availability_zone = cn-east-2b
+flavor = s2.small.1
+#image_id = befbd7ca-dd7a-4737-bc60-33a1cdf6ea8b
+#image_id = dec6b36c-b122-4a20-b4eb-e9c32344b13e
+#CentOS 7.4 64bit
+image_id = af92bb51-ec9d-4b02-912f-da0b3f0f7635
+#CentOS 7.2 64bit
+#image_id = 95c06f9a-19d5-48b1-a52b-bd09d837536f
+#image_id = eb812b4a-f54e-4438-a547-d507c05e2844
+network_ids = c4c0301b-954f-4fbf-85d2-0ff370b51c00
+master_nodes = 1
+worker_nodes = 2
+#added by fanbin
+#charging_mode = postPaid
+#period_type = month
+#period_num = 1
+#is_auto_renew = false
+master_on_cloud = true
+master_connect_ip = 192.168.0.200
+#Detailed configuration for different slurm node type
+[cluster/slurm/master]
+flavor = s3.large.2
+[cluster/slurm/worker]
+flavor = s2.small.1
+#The session to define SGE cluster
+[cluster/gridengine]
+cloud = hwc
+login = linux
+setup = ansible-gridengine
+security_group = security-hwcc
+availability_zone = cn-east-2b
+flavor = s2.small.1
+image_id = af92bb51-ec9d-4b02-912f-da0b3f0f7635
+network_ids = c4c0301b-954f-4fbf-85d2-0ff370b51c00
+master_nodes = 1
+worker_nodes = 2
+master_on_cloud = true
+master_connect_ip = 192.168.0.200
+#Detailed configuration for different sge node type
+[cluster/gridengine/master]
+flavor = s3.large.2
+[cluster/gridengine/worker]
+flavor = s2.small.1
+#The session to define TORQUE cluster
+[cluster/torque]
+cloud = hwc
+login = linux
+setup = ansible-torque
+security_group = security-hwcc
+availability_zone = cn-east-2b
+flavor = s2.large.2
+image_id = dec6b36c-b122-4a20-b4eb-e9c32344b13e
+network_ids = 6c7d662f-eb15-4a44-b2ef-2e71ff7fce15
+master_nodes = 1
+worker_nodes = 2
+#The session to define PBSPRO cluster
+[cluster/pbspro]
+cloud = hwc
+login = linux
+setup = ansible-pbspro
+security_group = security-hwcc
+availability_zone = cn-east-2b
+flavor = s3.small.1
+image_id = af92bb51-ec9d-4b02-912f-da0b3f0f7635
+network_ids = c4c0301b-954f-4fbf-85d2-0ff370b51c00
+master_nodes = 1
+worker_nodes = 20
+#Detailed configuration for different pbs node type
+[cluster/pbspro/master]
+flavor = s3.large.2
+[cluster/pbspro/worker]
+flavor = s2.small.1
