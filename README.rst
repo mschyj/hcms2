@@ -21,7 +21,7 @@ features at the moment:
 * INI-style configuration file to define cluster templates
 * Can start and manage multiple independent clusters at the same time
 * Automated setup of:
- * HPC clusters using SLURM_;
+ * HPC clusters using SLURM_ or SGE_;
  * ...or anything that you can install with an Ansible_ playbook!
 * Growing and shrinking a running cluster.
 
@@ -36,10 +36,6 @@ Quickstart
 ==========
 
 Please use QuickStart.txt to start your travel with this tool.
-
-After HWCC is installed, run this command to initialize the environment
-
-  sh Inithwcc.sh
 
 The configuration file is located in `.hwcc/config`.
 
@@ -67,6 +63,7 @@ installation script, please send an email to mschyj@sina.com
 .. _`Python`: http://www.python.org
 .. _`SLURM`: https://slurm.schedmd.com/
 .. _`Ubuntu`: http://www.ubuntu.com
+.. _`SGE`: https://arc.liv.ac.uk/trac/SGE
 
 .. (for Emacs only)
 ..

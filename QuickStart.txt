@@ -1,66 +1,41 @@
 HWCC is a user-friendly command line tool to create,manage and setup HPC clusters hosted on Huawei Cloud.
 In this quickstart, we will guide user to setup the slurm cluster with this tool quickly.
-If you are using the HWCC image from the Huawei Cloud Market, you could ignore the installation part. After deploy the ecs with the HWCC image from Huawei Cloud Market, the user could using the HWCC tool directly without installation.
+We are using the HWCC image from the Huawei Cloud Market. After deploy the ecs with the HWCC image, the user could using the HWCC tool directly without installation.
 
 Prepare you cloud
   1:Logon cloud with your cloud username/password 
-  2:Create Client-ECS with EIP which will be used to install HWCC.
+  2:Create Client-ECS with EIP with HWCC image from Cloud Market 
   3:Create vpc and subnet, get the value for network_ids.
   4:Create security group, get the value for security_group. 
-    a:Please don't use the default security group as the default group can not be found by name when using API.
+    a:Don't use the default security group as the default group can not be found by name when using Openstack API.
     b:Add the access rules to allow ssh connection.
 
-Hwcc Installation Requirement
-  1:Software Requirement
-    CentOS 6.9
-    Python 2.7.14
-  2:Installation Site
-    HWCC will be installed on the Client-ECS on the cloud in the same VPC to the cluster nodes.
-    Bind the EIP to the Client-ECS to make it be able to access the internet.
-
-Installation steps:
-  1:Get the tarball and untar it
-    #wget xxxxxx
-    #tar -xvf hwcc.tar.gz
-  2:Install by setup.py
-    #sh Install.sh
-    The installation script will install HWCC and dependent python packages.
-    We recommend to use virtualenv to install it to avoid the confict to your python environment.
-    Additional steps to use virtualenv
-    #pip install virtualenv
-    #virtualenv hwccenv
-    #source hwccenv/bin/activate
-    #python setup.py install 
+HWCC Requirement
+  HWCC will be installed on the Client-ECS on the cloud in the same VPC to the cluster nodes.
+  Bind the EIP to the Client-ECS to make it be able to access the internet.
 
 Initialize HWCC environment
   1:Deploy the ssh key to ~/.ssh
     #ssh-keygen -t rsa
-  2:Deploy the config files to ~/.hwcc
-    #sh Inithwcc.sh
 
 Start and Manage Cluster
+  0:Encrypt the username and password
+    #hwcc init --env
   1:Edit the config file to deploy the cluster
     Follow the comments in the config file
     #vi ~/.hwcc/config
   2:Start cluster, this will create the cluster according to config file
-    #hwcc start slurm -n test
+    #hwcc create slurm -n <clustername>
   3:Stop cluster. Notice here: this will delete the cluster(include the ECS) in the cloud.
-    #hwcc stop test 
+    #hwcc delete <cluster_name>
   4:Resize the cluster
-    #hwcc resize -a 1:worker test //add one worker node to the cluster
-    #hwcc resize -r 1:worker test //remove one worker node from the cluster
+    #hwcc resize -a 1:worker <cluster_name> //add one worker node to the cluster
+    #hwcc resize -r 1:worker <cluster_name> //remove one worker node from the cluster
 
-Enable Slurm power saving options
-  1:Update the slurm parameter in the config
-    global_var_slurm_suspendtime = 300 //unit:second. Default value is "-1", "-1" means the power saving is disable
-    global_var_user_client_ip = 192.168.0.230 //the private ip address of your client machine where hwcc is running
-  2:Re-setup the cluster
-    #hwcc setup test   
-  3:Initialize the slurm environment, the master node name should be supplied here, you could get it from the Cloud console
-    #sh Initslurm.sh 
+Enable Slurm power saving options: hwcc init --slurm <clustername>
 
 Create HPC Cluster with CHESS Web Portal
   1:Enable chess
     global_var_chess_enabled = true //defined in setup session, default value is false
   2:Choose chess image
-    image_id = chess_image_id //get chess image id from Huawei Cloud market
+    image_id = <chess_image_id> //get chess image id from Huawei Cloud market

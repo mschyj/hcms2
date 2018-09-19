@@ -343,6 +343,74 @@ class Restart(AbstractCommand):
             log.error("Could not start cluster `%s`: %s", cluster.name, err)
             raise
 
+class InitHwcc(AbstractCommand):
+    """
+    Init a cluster environment
+    """
+
+    def setup(self, subparsers):
+        parser = subparsers.add_parser(
+            "init", help="Init a cluster environment.",
+            description=self.__doc__)
+        parser.set_defaults(func=self)
+        parser.add_argument('--env', action="store_true", default=False,
+                            help="Encrypt the username and password for the clould provider.")
+        parser.add_argument('--slurm', action="store_true", default=False,
+                            help="Enable/Disable slurm power saving.")
+        parser.add_argument('cluster', nargs="*", help='Name of the cluster to init.')
+    def execute(self):
+        """
+        """
+        if self.params.cluster:
+           clustername = self.params.cluster[0]   
+        else:
+           clustername = ""
+        creator = make_creator(self.params.config,
+                               storage_path=self.params.storage)
+        repository = creator.create_repository()
+        clusters = repository.get_all()
+        clusterIsFound = False
+        if not clusters:
+            print("No clusters found.")
+        else:
+            for cluster in sorted(clusters):
+                if cluster.name == clustername and cluster.template == "slurm":
+                  clusterIsFound = True 
+                  break
+                else:
+                  clusterIsFound = False
+        if self.params.env:
+            username = raw_input("Please input your username of your cloud provider: ")
+            password = raw_input("Please input your password of your cloud provider: ")
+            pc = AESCrypto() 
+            sec_username = pc.encrypt(username)
+            sec_password = pc.encrypt(password)
+            print "The encrypted username is: " + sec_username
+            print "The encrypted password is: " + sec_password
+            home=os.environ['HOME']
+            config=home + "/.hwcc/config"
+            sed_cmd1="sed -i '/username =/c username = " + sec_username + "' " + config
+            sed_cmd2="sed -i '/password =/c password = " + sec_password + "' " + config
+            subprocess.call(sed_cmd1,shell=True)
+            subprocess.call(sed_cmd2,shell=True)
+            print "The username/password in the config has been updated"
+        else:
+            if not self.params.slurm:
+              print("usage: hwcc init [-h] [--env] [--slurm] [cluster [cluster ...]]")
+        if self.params.slurm:
+          if clusterIsFound:
+            print("The slurm power saving of the cluster will be initilized.")
+            while True:
+              suspendtime = bytes(raw_input("SuspendTime for power saving[unit:seconds]:"))
+              if suspendtime.isdigit():
+                 break
+              else:
+                 print("Wrong number, input again")
+            pc = InitSlurm()
+            pc.initslurm(clustername + "-master001", suspendtime) 
+            print("The initilization is done, more parameters need to be updated in the slurm.conf.")
+          else:
+            log.error("Cluster name is not provided or no suitable cluster found")
 
 class Stop(AbstractCommand):
     """
@@ -1034,7 +1102,7 @@ class ExportCluster(AbstractCommand):
             '-o', '--output-file', metavar='FILE', dest='zipfile',
             help="Output file to be used. By default the cluster is exported "
             "into a <cluster>.zip file where <cluster> is the cluster name.")
-        parser.add_argument('clustername', help='Name of the cluster to export.')
+        parser.add_argument('cluster', help='Name of the cluster to export.')
 
     def pre_run(self):
         # find proper path to zip file
@@ -1255,3 +1323,87 @@ class ImportCluster(AbstractCommand):
             print("Successfully imported cluster from ZIP %s to %s"
                   % (self.params.file, repo.storage_path))
         sys.exit(rc)
+
+import commands
+import subprocess
+import paramiko
+import vm
+class InitSlurm():
+  def initslurm(self,vmname,suspendtime):
+    vm_ip=vm.get_vm_ip(vmname)
+    remote_user=vm.remote_user
+    remote_ssh_dir="/" + vm.remote_user +"/.ssh"
+    local_ssh_dir="/" + vm.local_user + "/.ssh"
+    ssh_files=vm.ssh_files
+    blank=" "
+    ssh_keygen_cmd="ssh-keygen -t rsa"
+    ssh_authorized_key="cat " + local_ssh_dir + "/id_rsa.pub >> " + local_ssh_dir + "/authorized_keys"
+    if not os.path.exists(local_ssh_dir):
+      os.makedirs(local_ssh_dir)
+      output=subprocess.call(ssh_keygen_cmd,shell=True)
+      output=subprocess.call(ssh_authorized_key,shell=True) 
+    else:
+      output=subprocess.call(ssh_authorized_key,shell=True)
+    for file in ssh_files:
+      if os.path.isfile(file):
+        scp_cmd="scp -q " + file + blank + remote_user + "@" + vm_ip + ":" + remote_ssh_dir 
+        subprocess.call(scp_cmd,shell=True)
+      else:
+        print file + " is not found"
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(vm_ip, port=22,
+                username=remote_user,
+                allow_agent=True,
+                key_filename=local_ssh_dir + "/id_rsa",
+                timeout=60)
+    clustername=vmname[0:vmname.rfind("-")]
+    #print "The master name is " + vmname
+    cmd_suspend = "sed -i 's/clustername/" + clustername + "/g' /etc/slurm/slurm.suspend.sh"
+    cmd_resume = "sed -i 's/clustername/" + clustername + "/g' /etc/slurm/slurm.resume.sh"
+    cmd_slurm = "sed -i '/^SuspendTime=/c\SuspendTime=" + suspendtime + "' /etc/slurm/slurm.conf"
+    stdin, stdout, stderr = ssh.exec_command(cmd_suspend)
+    stdin, stdout, stderr = ssh.exec_command(cmd_resume)
+    stdin, stdout, stderr = ssh.exec_command(cmd_slurm)
+    stdin, stdout, stderr = ssh.exec_command("service slurmctld restart")
+    stdin, stdout, stderr = ssh.exec_command("service slurmctld restart")
+    ssh.close()
+
+import subprocess
+from Crypto.Cipher import AES
+from binascii import b2a_hex, a2b_hex
+class AESCrypto():
+    def __init__(self):
+        self.key = '1234567890123456' 
+        self.mode = AES.MODE_CBC
+
+    def encrypt(self,text):
+        if len(text)%16!=0:
+            text=text+str((16-len(text)%16)*'+')
+        cryptor = AES.new(self.key,self.mode,b'0000000000000000')
+        self.ciphertext = cryptor.encrypt(text)
+        return b2a_hex(self.ciphertext)
+
+    def decrypt(self,text):
+        cryptor = AES.new(self.key,self.mode,b'0000000000000000')
+        try:
+            plain_text  = cryptor.decrypt(a2b_hex(text))
+            return plain_text.rstrip('+')
+        except TypeError,e:
+            print "Your username/password is not encrypted:" + e.message
+if __name__ == '__main__':
+    username = raw_input("Please input your username of your cloud provider: ")
+    password = raw_input("Please input your password of your cloud provider: ")
+    pc = AESCrypto() 
+    sec_username = pc.encrypt(username)
+    sec_password = pc.encrypt(password)
+    print "The encrypted username is: " + sec_username
+    print "The encrypted password is: " + sec_password
+    home=os.environ['HOME']
+    config=home + "/.hwcc/config"
+    sed_cmd1="sed -i '/username =/c username = " + sec_username + "' " + config
+    sed_cmd2="sed -i '/password =/c password = " + sec_password + "' " + config
+    subprocess.call(sed_cmd1,shell=True)
+    subprocess.call(sed_cmd2,shell=True)
+    print "The config file has been updated"
+

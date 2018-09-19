@@ -35,7 +35,7 @@ from pkg_resources import resource_filename
 from elasticluster import log
 from elasticluster.subcommands import (
     AbstractCommand,
-    #ExportCluster,
+    ExportCluster,
     #ImportCluster,
     ListClusters,
     ListNodes,
@@ -48,6 +48,7 @@ from elasticluster.subcommands import (
     Start,
     Stop,
     Restart,
+    InitHwcc,
 )
 from elasticluster.conf import Creator
 from elasticluster.exceptions import ConfigurationError
@@ -98,6 +99,7 @@ class ElastiCluster(cli.app.CommandLineApp):
         # subcommands.abstract_command contract
         commands = [Start(self.params),
                     Restart(self.params),
+                    InitHwcc(self.params),
                     Stop(self.params),
                     ListClusters(self.params),
                     ListNodes(self.params),
@@ -108,7 +110,7 @@ class ElastiCluster(cli.app.CommandLineApp):
                     SftpFrontend(self.params),
                  #  MigrationCommand(self.params),
                   #  RemoveNode(self.params),
-                  #  ExportCluster(self.params),
+                    ExportCluster(self.params),
                    # ImportCluster(self.params),
                     ]
 
