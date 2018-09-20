@@ -527,12 +527,12 @@ class OpenStackCloudProvider(AbstractCloudProvider):
         # due to some `nova_client.servers.create()` implementation weirdness,
     # the first three args nee  # conflated into `**vm_start_args`
         vm = None
-        vm_instance_id = None         
-        if  'charging_mode' not in kwargs  or kwargs['charging_mode'] == "postPaid":          
+        vm_instance_id = None               
+        if  'charging_mode' not in kwargs  or kwargs['charging_mode'] == "postPaid":                  
             vm = self.nova_client.servers.create(node_name,image_id,flavor,**vm_start_args)                      
         else:
             order_info = self.create_prePaid_Server(node_name,image_id,flavor.id.encode('utf-8'),**vm_start_args)
-            order_id = order_info.order_id
+            order_id = order_info["order_id"]
             is_paid_order = raw_input("Please pay for your order %s , Enter [y/yes] if you have paid successfully! : " %order_id)
             if is_paid_order == "y" or is_paid_order == "yes":
                 vm_instance_id = None
@@ -544,7 +544,7 @@ class OpenStackCloudProvider(AbstractCloudProvider):
                 while is_confirm != "y" and is_confirm != "n":
                     is_confirm = raw_input("Please enter y or n: ")
                 if is_confirm == 'y' or is_confirm == 'yes':
-                    log.error('Payment Fail ')
+                    log.error('Payment Fail ')      
                     log.warn("your hwcc process will be killed!")       
                     os.system('kill -s 9 `pgrep hwcc`')                         
                 else:
@@ -635,19 +635,32 @@ class OpenStackCloudProvider(AbstractCloudProvider):
         self.get_project_id()
         pre_paid_args["metadata"]= {"op_svc_userid": self.user_id}
         pre_paid_args['root_volume'] = {"volumetype": "SATA"}
-       
-       
-        conn = Connection(
-            auth_url=self._os_auth_url,
-            user_domain_id=self.user_domain_id,
-            project_id=self.project_id,
-           username=self._os_username,
-            password=self._os_password,
-            verify=False
-        ) 
         
-        vm = conn.ecs.create_server_ext(**pre_paid_args)
-        return vm
+        create_prepaid_ecs_headers = {
+            'X-Auth-Token': self.token,
+            'Content-Type': 'application/json'
+        }               
+        pre_paid_args= {"server":pre_paid_args }
+        create_prepaid_ecs_para = json.dumps(pre_paid_args)
+        self.ecs_endpoint = "ecs.%s.myhuaweicloud.com"%self._os_region_name     
+        try:
+            create_ecs_response = requests.post('https://%s/v1.1/%s/cloudservers'%(self.ecs_endpoint,self.project_id), headers=create_prepaid_ecs_headers, data=create_prepaid_ecs_para)
+        except requests.ConnectionError as msg:
+            raise ResponseError(str(msg))
+        if create_ecs_response.status_code != 201 and create_ecs_response.status_code !=200 :
+            raise ResponseError("{0} status , msg:{1}".format(create_ecs_response.status_code,create_ecs_response.content))
+        create_ecs_response = create_ecs_response.json()
+        #conn = Connection(
+            #auth_url=self._os_auth_url,
+            #user_domain_id=self.user_domain_id,
+            #project_id=self.project_id,
+           #username=self._os_username,
+            #password=self._os_password,
+            #verify=False
+        #) 
+        
+        #vm = conn.ecs.create_server_ext(**pre_paid_args)
+        return create_ecs_response
             
     def stop_instance(self, instance_id):
         """Stops the instance gracefully.
@@ -691,20 +704,19 @@ class OpenStackCloudProvider(AbstractCloudProvider):
         '''
         query_res_headers = {
             'X-Auth-Token': self.token,
-             'Content-Type': 'application/json'
+            'Content-Type': 'application/json'
         }
-        cbc_endpoint = "bss.%s.myhuaweicloud.com"%self._os_region_name
-
+        cbc_endpoint = "bss.cn-north-1.myhuaweicloud.com"
         try:
             url = 'https://%s/v1.0/%s/common/order-mgr/resources/detail?order_id=%s'%(cbc_endpoint,self.user_domain_id,order_id)
             resinfo_response = requests.get(url, headers=query_res_headers)
-            resinfo_response = resinfo_response.json()
+            resinfo_response = resinfo_response.json()     
             if resinfo_response['total_count'] == 0:
                 #log.info('Order  is not paid or vm is building ')
                 return None
             else:
                 data = resinfo_response['data']
-                #print "data : %s"%data
+            #print "data : %s"%data
                 for res_data in data:	        
                     if res_data['resource_type_code'] == 'hws.resource.type.vm':
                         return res_data['resource_id'] 
