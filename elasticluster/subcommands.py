@@ -370,7 +370,7 @@ class InitHwcc(AbstractCommand):
         repository = creator.create_repository()
         clusters = repository.get_all()
         clusterIsFound = False
-        if not clusters and not self.params.env:
+        if not clusters and not self.params.login:
             print("No clusters found.")
         else:
             for cluster in sorted(clusters):
@@ -379,7 +379,7 @@ class InitHwcc(AbstractCommand):
                   break
                 else:
                   clusterIsFound = False
-        if self.params.env:
+        if self.params.login:
             username = raw_input("Please input your username of your cloud provider: ")
             password = raw_input("Please input your password of your cloud provider: ")
             pc = AESCrypto() 
