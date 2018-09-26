@@ -75,7 +75,6 @@ from novaclient import client as nova_client
 from novaclient.exceptions import NotFound
 from paramiko import DSSKey, RSAKey, PasswordRequiredException
 from paramiko.ssh_exception import SSHException
-from connection import Connection
 
 # Elasticluster imports
 from elasticluster import log

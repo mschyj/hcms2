@@ -353,7 +353,7 @@ class InitHwcc(AbstractCommand):
             "init", help="Init a cluster environment.",
             description=self.__doc__)
         parser.set_defaults(func=self)
-        parser.add_argument('--env', action="store_true", default=False,
+        parser.add_argument('--login', action="store_true", default=False,
                             help="Encrypt the username and password for the clould provider.")
         parser.add_argument('--slurm', action="store_true", default=False,
                             help="Enable/Disable slurm power saving.")
@@ -370,7 +370,7 @@ class InitHwcc(AbstractCommand):
         repository = creator.create_repository()
         clusters = repository.get_all()
         clusterIsFound = False
-        if not clusters:
+        if not clusters and not self.params.env:
             print("No clusters found.")
         else:
             for cluster in sorted(clusters):
@@ -396,7 +396,7 @@ class InitHwcc(AbstractCommand):
             print "The username/password in the config has been updated"
         else:
             if not self.params.slurm:
-              print("usage: hwcc init [-h] [--env] [--slurm] [cluster [cluster ...]]")
+              print("usage: hwcc init [-h] [--login] [--slurm] [cluster [cluster ...]]")
         if self.params.slurm:
           if clusterIsFound:
             print("The slurm power saving of the cluster will be initilized.")
