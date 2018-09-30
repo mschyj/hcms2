@@ -49,6 +49,8 @@ from elasticluster.subcommands import (
     Stop,
     Restart,
     InitHwcc,
+    Precheck,
+    Deploy,
 )
 from elasticluster.conf import Creator
 from elasticluster.exceptions import ConfigurationError
@@ -100,6 +102,8 @@ class ElastiCluster(cli.app.CommandLineApp):
         commands = [Start(self.params),
                     Restart(self.params),
                     InitHwcc(self.params),
+                    Precheck(self.params),
+                    Deploy(self.params),
                     Stop(self.params),
                     ListClusters(self.params),
                     ListNodes(self.params),

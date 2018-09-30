@@ -131,7 +131,7 @@ class Cluster(Struct):
                  cloud_provider=None,
                  setup_provider=None,
                  repository=None,
-                 start_timeout=600,
+                 start_timeout=60,
                  ssh_probe_timeout=5,
                  ssh_proxy_command='',
                  thread_pool_max_size=10,
@@ -500,6 +500,97 @@ class Cluster(Struct):
         # match the current setup.
         min_nodes = self._compute_min_nodes(min_nodes)
         self._check_cluster_size(min_nodes)
+
+    def deploy(self, min_nodes=None, master_connect_ip = "", max_concurrent_requests=0):
+        """
+        Deploy all the instances in the cloud.
+
+        :param min_nodes: minimum number of nodes to start in case the quota
+                          is reached before all instances are up
+        :type min_nodes: dict [node_kind] = number
+        :param int max_concurrent_requests:
+          Issue at most this number of requests to start
+          VMs; if 1 or less, start nodes one at a time (sequentially).
+          The special value ``0`` means run 4 threads for each available
+          processor.
+        """
+        nodes = self.get_all_nodes()
+        import vm
+        cluster_name = self.name
+        subnet_id = self.extra.pop('network_ids')
+        exist_nodes = vm.get_all_nodes(subnet_id, cluster_name)
+        print(exist_nodes)
+        log.info(
+            "Starting cluster nodes (timeout: %d seconds) ...",
+            self.start_timeout)
+        if max_concurrent_requests == 0:
+            try:
+                max_concurrent_requests = 4 * get_num_processors()
+            except RuntimeError:
+                log.warning(
+                    "Cannot determine number of processors!"
+                    " will start nodes sequentially...")
+                max_concurrent_requests = 1
+        # start nodes, distinguish on cloud or not
+        start_nodes = []
+        master_node = exist_nodes[0]
+        master_instance_id = master_node['instance_id']
+        i=1
+        for node in copy(nodes):
+           if node['kind'] != 'master':
+             worker_node = []
+             worker_node = exist_nodes[i]
+             i=i+1
+             node['instance_id'] = worker_node['instance_id']
+             start_nodes.append(node)
+           else:
+             node['instance_id'] = master_instance_id
+             start_nodes.insert(0,node) 
+        
+        #if max_concurrent_requests > 1:
+        #    nodes = self._start_nodes_parallel(start_nodes, max_concurrent_requests)
+        #else:
+        #    nodes = self._start_nodes_sequentially(start_nodes)
+
+        # checkpoint cluster state
+        self.repository.save_or_update(self)
+
+        not_started_nodes = self._check_starting_nodes(nodes, self.start_timeout)
+
+        # now that all nodes are up, checkpoint cluster state again
+        self.repository.save_or_update(self)
+
+        # Try to connect to each node to gather IP addresses and SSH host keys
+        log.info(
+            "Checking SSH connection to nodes (timeout: %d seconds) ...",
+            self.start_timeout)
+        pending_nodes = set(nodes) - not_started_nodes
+
+        self._gather_node_ip_addresses(
+            pending_nodes, self.start_timeout, self.ssh_probe_timeout)
+
+        # It might be possible that the node.connect() call updated
+        # the `preferred_ip` attribute, so, let's save the cluster
+        # again.
+        self.repository.save_or_update(self)
+
+        # A lot of things could go wrong when starting the cluster. To
+        # ensure a stable cluster fitting the needs of the user in terms of
+        # cluster size, we check the minimum nodes within the node groups to
+        # match the current setup.
+        min_nodes = self._compute_min_nodes(min_nodes)
+        self._check_cluster_size(min_nodes)
+
+
+    def check(self):
+        """
+        """
+        print("Checking the cluster configuration")
+        nodes = self.get_all_nodes()
+        for node in copy(nodes):
+           if node['kind'] == 'master':
+              master_node = node
+        master_node.check()
 
     def _start_nodes_sequentially(self, nodes):
         """
@@ -1224,6 +1315,7 @@ class Node(Struct):
         self.availability_zone = availability_zone
         self.ssh_proxy_command = ssh_proxy_command
         self.instance_id = extra.pop('instance_id', None)
+        #self.order_id = extra.pop('order_id', None)
         #self.availability_zone = extra.pop('availability_zone')
         self.preferred_ip = extra.pop('preferred_ip', None)
         self.ips = extra.pop('ips', [])
@@ -1239,6 +1331,21 @@ class Node(Struct):
         self.__dict__.update(state)
         if 'image_id' not in state and 'image' in state:
             state['image_id'] = state['image']
+
+    def check(self):
+        """
+        """
+        log.info("Checking node `%s` from image `%s` with flavor %s ...",
+                 self.name, self.image_id, self.flavor)
+        self.extra['cluster_name'] = self.cluster_name
+        self.instance_id = self._cloud_provider.check_instance(
+            self.user_key_name, self.user_key_public, self.user_key_private,
+            self.security_group,
+            self.flavor, self.image_id, self.image_userdata,availability_zone=self.availability_zone,
+            username=self.image_user,
+            node_name=("%s-%s" % (self.cluster_name, self.name)),
+            **self.extra)
+        log.debug("Cluster `%s` checking is completed", self.cluster_name)
 
     def start(self):
         """

@@ -343,6 +343,185 @@ class Restart(AbstractCommand):
             log.error("Could not start cluster `%s`: %s", cluster.name, err)
             raise
 
+
+class Deploy(AbstractCommand):
+    """
+    Deploy a new cluster on the existing machines using the given cluster template.
+    """
+    def setup(self, subparsers):
+        parser = subparsers.add_parser(
+            "deploy", help="Deploy a cluster using the existing machines.",
+            description=self.__doc__)
+        parser.set_defaults(func=self)
+        parser.add_argument('template',
+                            help="Type of cluster. It refers to a "
+                                 "configuration stanza [cluster/<name>]")
+        parser.add_argument('-n', '--name', dest='cluster_name',
+                            help='Name of the cluster.')
+        parser.add_argument('--nodes', metavar='N1:GROUP[,N2:GROUP2,...]',
+                            help='Override the values in of the configuration '
+                                 'file and starts `N1` nodes of group `GROUP`,'
+                                 'N2 of GROUP2 etc...')
+        parser.add_argument('--no-setup', action="store_true", default=False,
+                            help="Only start the cluster, do not configure it")        
+        parser.add_argument(
+            '-p', '--max-concurrent-requests', default=0,
+            dest='max_concurrent_requests', type=int, metavar='NUM',
+            help=("Try to start at most NUM nodes at the same time."
+                  " Set to 1 to avoid making multiple requests"
+                  " to the cloud controller and start nodes sequentially."
+                  " The special value `0` (default) means: start up to"
+                  " 4 independent requests per CPU core."))
+
+    def pre_run(self):
+        self.params.nodes_override = {}
+        if self.params.nodes:
+            nodes = self.params.nodes.split(',')
+            for nspec in nodes:
+                n, kind = nspec.split(':')
+                try:
+                    n = int(n)
+                except (ValueError, TypeError) as err:
+                    raise ConfigurationError(
+                        "Invalid syntax for option `--nodes`: "
+                        "cannot convert `{n}` to integer: {err}"
+                        .format(n=n, err=err))
+                self.params.nodes_override[kind] = n
+
+    def execute(self):
+        """
+        Deploy a new cluster.
+        """
+
+        cluster_template = self.params.template
+        if self.params.cluster_name:
+            cluster_name = self.params.cluster_name
+        else:
+            cluster_name = self.params.template
+
+        creator = make_creator(self.params.config,
+                               storage_path=self.params.storage)
+
+        if cluster_template not in creator.cluster_conf:
+            raise ClusterNotFound(
+                "No cluster template named `{0}`"
+                .format(cluster_template))
+
+        # possibly overwrite node mix from config
+        cluster_nodes_conf = creator.cluster_conf[cluster_template]['nodes']
+        for kind, num in self.params.nodes_override.iteritems():
+            if kind not in cluster_nodes_conf:
+                raise ConfigurationError(
+                    "No node group `{kind}` defined"
+                    " in cluster template `{template}`"
+                    .format(kind=kind, template=cluster_template))
+            cluster_nodes_conf[kind]['num'] = num
+
+        # First, check if the cluster is already created.
+        try:
+            cluster = creator.load_cluster(cluster_name)
+        except ClusterNotFound:
+            try:
+                cluster = creator.create_cluster(
+                    cluster_template, cluster_name)
+            except ConfigurationError as err:
+                log.error("Creating cluster %s: %s", cluster_template, err)
+                return
+
+        try:
+            known_hosts_file = "%s/%s.known_hosts"%(self.params.storage,cluster_name)
+            yaml_file = "%s/%s.yaml"%(self.params.storage,cluster_name)
+            print("Creating cluster `{0}` with:".format(cluster.name))
+            for cls in cluster.nodes:
+                print("* {0:d} {1} nodes.".format(len(cluster.nodes[cls]), cls))
+            print("(This may take a while...)")     
+            min_nodes = dict((kind, cluster_nodes_conf[kind]['min_num'])
+                             for kind in cluster_nodes_conf)
+            cluster.deploy(min_nodes, self.params.max_concurrent_requests)
+            if self.params.no_setup:
+            #if False:       
+                print("NOT configuring the cluster as requested.")
+            else:
+                print("Configuring the cluster ...")
+                print("(this too may take a while)")
+                ok = cluster.setup()
+                if ok:
+                    print(
+                        "\nYour cluster `{0}` is ready!"
+                        .format(cluster.name))
+                    print(cluster_summary(cluster))
+                else:
+                    print(
+                        "\nWARNING: YOUR CLUSTER `{0}` IS NOT READY YET!"
+                        .format(cluster.name))
+            #print(cluster_summary(cluster))
+        except (KeyError, ImageError, SecurityGroupError, ClusterError) as err:
+            log.error("Could not start cluster `%s`: %s", cluster.name, err)
+            raise
+
+
+class Precheck(AbstractCommand):
+    """
+    Pre-check a new cluster using the given cluster template.
+    """
+
+    def setup(self, subparsers):
+        parser = subparsers.add_parser(
+            "precheck", help="Precheck a cluster using the supplied configuration.",
+            description=self.__doc__)
+        parser.set_defaults(func=self)
+        parser.add_argument('template',
+                            help="Type of cluster. It refers to a "
+                                 "configuration stanza [cluster/<name>]")
+        parser.add_argument('-n', '--name', dest='cluster_name',
+                            help='Name of the cluster.')
+
+    def execute(self):
+        """
+        Precheck a new cluster.
+        """
+
+        cluster_template = self.params.template
+        if self.params.cluster_name:
+            cluster_name = self.params.cluster_name
+        else:
+            cluster_name = self.params.template
+
+        creator = make_creator(self.params.config,
+                               storage_path=self.params.storage)
+
+        if cluster_template not in creator.cluster_conf:
+            raise ClusterNotFound(
+                "No cluster template named `{0}`"
+                .format(cluster_template))
+
+        # possibly overwrite node mix from config
+        cluster_nodes_conf = creator.cluster_conf[cluster_template]['nodes']
+
+        # First, check if the cluster is already created.
+        try:
+            cluster = creator.load_cluster(cluster_name)
+        except ClusterNotFound:
+            try:
+                cluster = creator.create_cluster(
+                    cluster_template, cluster_name)
+            except ConfigurationError as err:
+                log.error("Creating cluster %s: %s", cluster_template, err)
+                return
+
+        try:
+            known_hosts_file = "%s/%s.known_hosts"%(self.params.storage,cluster_name)
+            yaml_file = "%s/%s.yaml"%(self.params.storage,cluster_name)
+            if  os.path.exists(known_hosts_file) and os.path.exists(yaml_file):
+                log.error("create cluster `{0}` failed, as the cluster is existing, please run 'recreate' command to re-create the cluster .".format(cluster.name))
+                return
+            print("Checking cluster `{0}` with:".format(cluster.name))
+            print("(This may take a while...)")     
+            cluster.check()
+        except (KeyError, ImageError, SecurityGroupError, ClusterError) as err:
+            log.error("There are some errors in the cluster `%s`: %s", cluster.name, err)
+            raise
+
 class InitHwcc(AbstractCommand):
     """
     Init a cluster environment

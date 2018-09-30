@@ -532,30 +532,16 @@ class OpenStackCloudProvider(AbstractCloudProvider):
         else:
             order_info = self.create_prePaid_Server(node_name,image_id,flavor.id.encode('utf-8'),**vm_start_args)
             order_id = order_info["order_id"]
-            is_paid_order = raw_input("Please pay for your order %s , Enter [y/yes] if you have paid successfully! : " %order_id)
-            if is_paid_order == "y" or is_paid_order == "yes":
-                vm_instance_id = None
-                while vm_instance_id is None:
-                    vm_instance_id = self.query_prePaidRes(order_id)        
-                    time.sleep(5)
-            else:
-                is_confirm = raw_input("Warning : your input is not y or yes ,  confirm or not [y/n]: ")
-                while is_confirm != "y" and is_confirm != "n":
-                    is_confirm = raw_input("Please enter y or n: ")
-                if is_confirm == 'y' or is_confirm == 'yes':
-                    log.error('Payment Fail ')      
-                    log.warn("your hwcc process will be killed!")       
-                    os.system('kill -s 9 `pgrep hwcc`')                         
-                else:
-                    vm_instance_id = None
-                    while vm_instance_id is None:
-                        vm_instance_id = self.query_prePaidRes(order_id)
-                        time.sleep(10)
+            print("Please pay for your order %s from the web console in 60s or Ctrl+C to cancel the request." %order_id)
+            vm_instance_id = None
+            count_num = 0
+            while vm_instance_id is None and count_num < 11:
+              vm_instance_id = self.query_prePaidRes(order_id)
+              count_num = count_num + 1        
+              time.sleep(6)
             OpenStackCloudProvider.prePaid_id = vm_instance_id
-            vm =  VmInfo()                                      
-            
-        
-      #  vm = self.nova_client.servers.create(node_name,image_id, flavor, **vm_start_args)
+            vm =  VmInfo()      
+                                
     # allocate and attach a floating IP, if requested
         if self.request_floating_ip:        
         # We need to list the floating IPs for this instance
@@ -573,6 +559,51 @@ class OpenStackCloudProvider(AbstractCloudProvider):
 
         return vm.id
 
+
+    def check_instance(self, key_name, public_key_path, private_key_path,
+                       security_group, flavor, image_id, image_userdata,availability_zone=None,
+                    username=None,node_name=None, **kwargs):
+        self._init_os_api()
+
+        vm_start_args = {}
+        if 'availability_zone' in kwargs:
+            availability_zone=kwargs.pop('availability_zone')
+        vm_start_args['availability_zone'] = availability_zone
+        log.debug("Checking keypair `%s` ...", key_name)
+        with OpenStackCloudProvider.__node_start_lock:
+            self._check_keypair(key_name, public_key_path, private_key_path)
+        vm_start_args['key_name'] = key_name
+
+        security_groups = [sg.strip() for sg in security_group.split(',')]
+        self._check_security_groups(security_groups)
+        vm_start_args['security_groups'] = security_groups
+
+
+        # Check if the image id is present.
+        if image_id not in [img.id for img in self._get_images()]:
+            raise ImageError(
+                    "No image found with ID `{0}` in project `{1}` of cloud {2}"
+                    .format(image_id, self._os_tenant_name, self._os_auth_url))
+        vm_start_args['userdata'] = image_userdata
+
+        # Check if the flavor exists
+        flavors = [fl for fl in self._get_flavors() if fl.name == flavor]
+        if not flavors:
+            raise FlavorError(
+                "No flavor found with name `{0}` in project `{1}` of cloud {2}"
+                .format(flavor, self._os_tenant_name, self._os_auth_url))
+        flavor = flavors[0]
+
+        network_ids = [net_id.strip()
+                       for net_id in kwargs.pop('network_ids', '').split(',')]
+        if network_ids:
+            nics = [{'net-id': net_id, 'v4-fixed-ip': ''}
+                    for net_id in network_ids ]
+            log.debug("Checking networks for node %s: %s",
+                      node_name, ', '.join([nic['net-id'] for nic in nics]))
+        else:
+            nics = None
+          
 
     def create_prePaid_Server(self,node_name,image_id,flavorRef,**vm_start_args):
         pre_paid_args = {}
