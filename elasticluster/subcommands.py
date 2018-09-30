@@ -431,6 +431,11 @@ class Deploy(AbstractCommand):
         try:
             known_hosts_file = "%s/%s.known_hosts"%(self.params.storage,cluster_name)
             yaml_file = "%s/%s.yaml"%(self.params.storage,cluster_name)
+            if os.path.exists(known_hosts_file) and os.path.exists(yaml_file):
+              confirm_or_abort("WARNING: Your cluster '{0}' is existing!\nDo you really want to override it"
+                               .format(cluster_name),
+                               msg="Aborting upon user request.")
+              cluster._delete_saved_data()  
             print("Creating cluster `{0}` with:".format(cluster.name))
             for cls in cluster.nodes:
                 print("* {0:d} {1} nodes.".format(len(cluster.nodes[cls]), cls))

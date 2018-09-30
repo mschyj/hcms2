@@ -153,13 +153,11 @@ class Cluster(Struct):
             self.master_nodes = int(extra['extra']['master_nodes'])
         else:
             self.master_nodes = int(extra['master_nodes'])        
-        self.ssh_to = extra.pop('ssh_to', None)     
-
+        self.ssh_to = extra.pop('ssh_to', None) 
+    
         self.user_key_private = os.path.expandvars(user_key_private)
-        self.user_key_private = os.path.expanduser(user_key_private)
 
         self.user_key_public = os.path.expanduser(user_key_public)
-        self.user_key_public = os.path.expandvars(user_key_public)
 
         # this needs to exist before `add_node()` is called
         self._naming_policy = NodeNamingPolicy()
@@ -189,6 +187,7 @@ class Cluster(Struct):
             if hasattr(self, key):
                 del extra[key]
         self.extra.update(extra)
+        self.subnet_id = extra.pop("network_ids",None)
 
     @property
     def known_hosts_file(self):
@@ -517,8 +516,8 @@ class Cluster(Struct):
         nodes = self.get_all_nodes()
         import vm
         cluster_name = self.name
-        subnet_id = self.extra.pop('network_ids')
-        exist_nodes = vm.get_all_nodes(subnet_id, cluster_name)
+        template_name = self.template
+        exist_nodes = vm.get_all_nodes(template_name, cluster_name)
         print(exist_nodes)
         log.info(
             "Starting cluster nodes (timeout: %d seconds) ...",

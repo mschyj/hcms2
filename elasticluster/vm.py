@@ -112,10 +112,11 @@ def get_vpc_id(subnet_id):
       vpc_id = network['name']
   return vpc_id
 
-def get_all_nodes(subnet_id,cluster_name):
+def get_all_nodes(template,cluster_name):
   sess = session.Session(auth=auth, verify=True)
   novacli = nova_client.Client("2.1", session=sess)
   vms=novacli.servers.list()
+  subnet_id = config.get("cluster/"+template,"network_ids")
   vpc_id = get_vpc_id(subnet_id)
   nodes = []
   for vm in vms:
@@ -130,7 +131,7 @@ def get_all_nodes(subnet_id,cluster_name):
        nodes.append(node)
   find = False
   while True:
-    master_node_id = raw_input("Input your instance id of master node: ")
+    master_node_id = raw_input("Specify your instance id of master node: ")
     for node in nodes:
       if master_node_id == node['instance_id']:
         nodes.remove(node)
