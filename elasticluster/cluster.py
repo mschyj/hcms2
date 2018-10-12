@@ -188,6 +188,7 @@ class Cluster(Struct):
                 del extra[key]
         self.extra.update(extra)
         self.subnet_id = extra.pop("network_ids",None)
+        self.charging_mode = extra.pop("charging_mode",None)
 
     @property
     def known_hosts_file(self):
@@ -877,8 +878,16 @@ class Cluster(Struct):
           remove cluster from storage even if not all nodes could be stopped.
         """
         log.debug("Stopping cluster `%s` ...", self.name)
-
-        failed = self._stop_all_nodes(wait)
+        
+        if self.charging_mode != "prePaid":
+          failed = self._stop_all_nodes(wait)
+        else:
+          failed = False
+          log.warning(
+               "This is pre-paid cluster. "
+               "We only delete the cluster configuration, "
+               "but don't delete the cluster machines. "
+               "You could release the pre-paid ecs from order management.")
 
         if failed:
             if force:
