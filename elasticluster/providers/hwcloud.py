@@ -532,10 +532,10 @@ class OpenStackCloudProvider(AbstractCloudProvider):
         else:
             order_info = self.create_prePaid_Server(node_name,image_id,flavor.id.encode('utf-8'),**vm_start_args)
             order_id = order_info["order_id"]
-            print("Please pay for your order %s from the web console in 300s or Ctrl+C to cancel the request." %order_id)
+            print("Please pay for your order %s from the web console in 600s or Ctrl+C to cancel the request." %order_id)
             vm_instance_id = None
             count_num = 0
-            while vm_instance_id is None and count_num < 51:
+            while vm_instance_id is None and count_num < 101:
               vm_instance_id = self.query_prePaidRes(order_id)
               count_num = count_num + 1        
               time.sleep(6)

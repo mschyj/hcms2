@@ -883,11 +883,10 @@ class Cluster(Struct):
           failed = self._stop_all_nodes(wait)
         else:
           failed = False
-          log.warning(
-               "This is pre-paid cluster. "
-               "We only delete the cluster configuration, "
-               "but don't delete the cluster machines. "
-               "You could release the pre-paid ecs from order management.")
+          print("Warning: This is a pre-paid cluster. "
+                + "We only delete the cluster configuration, "
+                + "but don't delete the cluster nodes. "
+                + "You could release the pre-paid nodes from order management.")
 
         if failed:
             if force:
@@ -1334,6 +1333,8 @@ class Node(Struct):
         self.extra = {}
         self.extra.update(extra.pop('extra', {}))
         self.extra.update(extra)        
+        
+        self.charging_mode = extra.pop("charging_mode",None)
 
     def __setstate__(self, state):
         self.__dict__.update(state)
@@ -1380,20 +1381,23 @@ class Node(Struct):
         """
         Terminate the VM instance launched on the cloud for this specific node.
         """
-        if self.instance_id is not None:
-            log.info("Shutting down node `%s` (VM instance `%s`) ...",
-                     self.name, self.instance_id)
+        if self.charging_mode == "prePaid":
+          print("Warning: `{0}` is a pre-paid node. We only remove it from the cluster, but don't delete the node.".format(self.name))
+        else:
+          if self.instance_id is not None:
+              log.info("Shutting down node `%s` (VM instance `%s`) ...",
+                       self.name, self.instance_id)
 
-            self._cloud_provider.stop_instance(self.instance_id)
-            if wait:
-                while self.is_alive():
-                    time.sleep(1)
-            # When an instance is terminated, the EC2 cloud provider will
-            # basically return it as "running" state. Setting the
-            # `instance_id` attribute to None will force `is_alive()`
-            # method not to check with the cloud provider, and forever
-            # forgetting about the instance id.
-            self.instance_id = None
+              self._cloud_provider.stop_instance(self.instance_id)
+              if wait:
+                  while self.is_alive():
+                      time.sleep(1)
+              # When an instance is terminated, the EC2 cloud provider will
+              # basically return it as "running" state. Setting the
+              # `instance_id` attribute to None will force `is_alive()`
+              # method not to check with the cloud provider, and forever
+              # forgetting about the instance id.
+              self.instance_id = None
 
     def is_alive(self):
         """Checks if the current node is up and running in the cloud. It
