@@ -527,7 +527,8 @@ class OpenStackCloudProvider(AbstractCloudProvider):
     # the first three args nee  # conflated into `**vm_start_args`
         vm = None
         vm_instance_id = None               
-        if  'charging_mode' not in kwargs  or kwargs['charging_mode'] == "postPaid":                  
+        #if  'charging_mode' not in kwargs  or kwargs['charging_mode'] == "postPaid" or kwargs['charging_mode'] == "null":                  
+        if kwargs['charging_mode'] != "prePaid": 
             vm = self.nova_client.servers.create(node_name,image_id,flavor,**vm_start_args)                      
         else:
             order_info = self.create_prePaid_Server(node_name,image_id,flavor.id.encode('utf-8'),**vm_start_args)
