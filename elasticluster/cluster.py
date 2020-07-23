@@ -147,12 +147,12 @@ class Cluster(Struct):
         self.user_key_name = user_key_name
         self.repository = repository if repository else MemRepository()
         self.availability_zone = extra.pop('availability_zone')
-        self.master_connect_ip = extra.pop('master_connect_ip',"")
-        self.master_on_cloud = extra.pop('master_on_cloud',True) 
-        if 'master_nodes' not in extra:
-            self.master_nodes = int(extra['extra']['master_nodes'])
+        self.main_connect_ip = extra.pop('main_connect_ip',"")
+        self.main_on_cloud = extra.pop('main_on_cloud',True) 
+        if 'main_nodes' not in extra:
+            self.main_nodes = int(extra['extra']['main_nodes'])
         else:
-            self.master_nodes = int(extra['master_nodes'])        
+            self.main_nodes = int(extra['main_nodes'])        
         self.ssh_to = extra.pop('ssh_to', None)     
 
         self.user_key_private = os.path.expandvars(user_key_private)
@@ -265,7 +265,7 @@ class Cluster(Struct):
     _NODE_KIND_RE = re.compile(r'^[a-z0-9-]*[a-z-]+$', re.I)
 
     def add_node(self, kind, image_id, image_user, flavor,availability_zone,
-                 security_group, image_userdata='', master_add_ip = None, name=None, **extra):
+                 security_group, image_userdata='', main_add_ip = None, name=None, **extra):
         """
         Adds a new node to the cluster. This factory method provides an
         easy way to add a new node to the cluster by specifying all relevant
@@ -340,9 +340,9 @@ class Cluster(Struct):
         else:
             self._naming_policy.use(kind, name)
         node = Node(name=name, **extra)
-        if master_add_ip is not None:
+        if main_add_ip is not None:
             ips = []
-            ips.append(master_add_ip)
+            ips.append(main_add_ip)
             node['ips'] = ips
         
         self.nodes[kind].append(node)        
@@ -402,7 +402,7 @@ class Cluster(Struct):
             except ValueError:
                 raise NodeNotFound("Node %s not found in cluster" % node.name)
 
-    def start(self, min_nodes=None, master_connect_ip = "", max_concurrent_requests=0):
+    def start(self, min_nodes=None, main_connect_ip = "", max_concurrent_requests=0):
         """
         Starts up all the instances in the cloud.
 
@@ -445,25 +445,25 @@ class Cluster(Struct):
                 max_concurrent_requests = 1
         # start nodes, distinguish on cloud or not
         start_nodes = []
-        master_nodes = []
-        master_connect_ips = re.split(r"\,",self.master_connect_ip)
-        if not self.master_on_cloud and len(master_connect_ips) != self.master_nodes:
-            raise ClusterError("the number of master_connect_ip is not correct, please check your config!") 
+        main_nodes = []
+        main_connect_ips = re.split(r"\,",self.main_connect_ip)
+        if not self.main_on_cloud and len(main_connect_ips) != self.main_nodes:
+            raise ClusterError("the number of main_connect_ip is not correct, please check your config!") 
         
         i = 0
-        if not self.master_on_cloud:
+        if not self.main_on_cloud:
             for node in copy(nodes):
-                if node['kind'] != 'master':
+                if node['kind'] != 'main':
                     start_nodes.append(node)
                 elif len(node['ips']) == 0 :        
                     ips = []
-                    ips.append(master_connect_ips[i])
+                    ips.append(main_connect_ips[i])
                     node['ips'] = ips
-                    master_nodes.append(node)
+                    main_nodes.append(node)
                     i = i + 1
                 else:
                     node['preferred_ip'] = node['ips']
-                    master_nodes.append(node)   
+                    main_nodes.append(node)   
         else:               
             start_nodes = nodes
         
@@ -485,7 +485,7 @@ class Cluster(Struct):
             "Checking SSH connection to nodes (timeout: %d seconds) ...",
             self.start_timeout)
         pending_nodes = nodes - not_started_nodes
-        pending_nodes = pending_nodes | set(master_nodes)
+        pending_nodes = pending_nodes | set(main_nodes)
         self._gather_node_ip_addresses(
             pending_nodes, self.start_timeout, self.ssh_probe_timeout)
 
@@ -798,7 +798,7 @@ class Cluster(Struct):
         failed = 0
         for node in self.get_all_nodes():
             if not node.instance_id:
-                if re.match(r'master',node.name) is not None and not self.master_on_cloud:
+                if re.match(r'main',node.name) is not None and not self.main_on_cloud:
                     log.warning("Node `%s` is under cloud,"
                        " it cannot be removed from the cluster.", node.name)
                 else:
@@ -839,7 +839,7 @@ class Cluster(Struct):
 
         If not ``ssh_to`` has been specified in this cluster's config,
         then try node class names ``ssh``, ``login``, ``frontend``,
-        and ``master``: if any of these is non-empty, return the first
+        and ``main``: if any of these is non-empty, return the first
         node.
 
         If all else fails, return the first node of the first class
@@ -891,7 +891,7 @@ class Cluster(Struct):
 
         # If we reach this point, `ssh_to` was not set or the
         # preferred class was empty. Try "natural" `ssh_to` values.
-        for kind in ['ssh', 'login', 'frontend', 'master']:
+        for kind in ['ssh', 'login', 'frontend', 'main']:
             try:
                 nodes = self.nodes[kind]
                 return nodes[0]
@@ -957,7 +957,7 @@ class Cluster(Struct):
                                          node.preferred_ip in node.ips):
                     node.connect()
             except InstanceError as ex:
-                if re.match(r'master',node['name']) is not None and not self.master_on_cloud:
+                if re.match(r'main',node['name']) is not None and not self.main_on_cloud:
                     log.warning("node %s is not on cloud",
                                 node)
                 else:
