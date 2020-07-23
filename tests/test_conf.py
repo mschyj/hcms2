@@ -69,9 +69,9 @@ def test_gce_accelerator1(tmpdir):
 # security_group=default
 # image_id=**not important**
 # flavor=n1-standard-1
-# master_nodes=1
+# main_nodes=1
 # worker_nodes=4
-# ssh_to=master
+# ssh_to=main
 
 # [cluster/slurm/worker]
 # accelerator_count=1
@@ -83,8 +83,8 @@ def test_gce_accelerator1(tmpdir):
         config_file.flush()
     creator = make_creator(config_path)
     cluster = creator.create_cluster('example_google')
-    # "master" nodes take values from their specific config section
-    #assert cluster.nodes['master'][0].extra['accelerator_count'] == 0
+    # "main" nodes take values from their specific config section
+    #assert cluster.nodes['main'][0].extra['accelerator_count'] == 0
     # "worker" nodes take values from the cluster defaults
     assert 'accelerator_count' in cluster.nodes['misc'][0].extra
     assert cluster.nodes['misc'][0].extra['accelerator_count'] == 1
@@ -109,9 +109,9 @@ setup=slurm_setup
 security_group=default
 image_id=**not important**
 flavor=n1-standard-1
-master_nodes=1
+main_nodes=1
 worker_nodes=4
-ssh_to=master
+ssh_to=main
 
 [cluster/test/worker]
 accelerator_count=2
@@ -123,8 +123,8 @@ accelerator_count=2
         config_file.flush()
     creator = make_creator(config_path)
     cluster = creator.create_cluster('test')
-    # "master" nodes take values from their specific config section
-    assert cluster.nodes['master'][0].extra['accelerator_count'] == 0
+    # "main" nodes take values from their specific config section
+    assert cluster.nodes['main'][0].extra['accelerator_count'] == 0
     # "worker" nodes take values from the cluster defaults
     assert 'accelerator_count' in cluster.nodes['worker'][0].extra
     assert cluster.nodes['worker'][0].extra['accelerator_count'] == 2
@@ -149,13 +149,13 @@ setup=slurm_setup
 security_group=default
 image_id=https://www.googleapis.com/compute/v1/projects/jda-labs---decision-science-01/global/images/image-python-ubuntu
 flavor=n1-standard-1
-master_nodes=1
+main_nodes=1
 worker_nodes=4
-ssh_to=master
+ssh_to=main
 image_userdata=
 boot_disk_size=20
 
-[cluster/slurm/master]
+[cluster/slurm/main]
 flavor=n1-standard-2
 boot_disk_size=100
     """
@@ -166,9 +166,9 @@ boot_disk_size=100
         config_file.flush()
     creator = make_creator(config_path)
     cluster = creator.create_cluster('slurm')
-    # "master" nodes take values from their specific config section
-    assert cluster.nodes['master'][0].flavor == 'n1-standard-2'
-    assert cluster.nodes['master'][0].extra['boot_disk_size'] == '100'
+    # "main" nodes take values from their specific config section
+    assert cluster.nodes['main'][0].flavor == 'n1-standard-2'
+    assert cluster.nodes['main'][0].extra['boot_disk_size'] == '100'
     # "worker" nodes take values from the cluster defaults
     assert cluster.nodes['worker'][0].flavor == 'n1-standard-1'
     assert 'boot_disk_size' in cluster.nodes['worker'][0].extra
@@ -239,9 +239,9 @@ setup=slurm_setup
 security_group=default
 image_id=https://www.googleapis.com/compute/v1/projects/jda-labs---decision-science-01/global/images/image-python-ubuntu
 flavor=n1-standard-1
-master_nodes=1
+main_nodes=1
 worker_nodes=4
-ssh_to=master
+ssh_to=main
     """
             + make_config_snippet("setup", "slurm_setup")
         )
@@ -359,7 +359,7 @@ def test_default_setup_provider_is_ansible(tmpdir):
             # *note:* no `provider=` line here
             + """
 [setup/setup_no_ansible]
-frontend_groups = slurm_master
+frontend_groups = slurm_main
 compute_groups = slurm_worker
     """
         )
@@ -650,22 +650,22 @@ compute_groups = slurm_worker
 
 # [setup/ansible-slurm]
 # provider=ansible
-# frontend_groups=slurm_master
+# frontend_groups=slurm_main
 # compute_groups=slurm_worker
 
 # [setup/ansible-gridengine]
 # provider=ansible
-# frontend_groups=gridengine_master
+# frontend_groups=gridengine_main
 # compute_groups=gridengine_clients
 
 # [setup/ansible-pbs]
 # provider=ansible
-# frontend_groups=pbs_master,maui_master
+# frontend_groups=pbs_main,maui_main
 # compute_groups=pbs_clients
 
 # [setup/ansible_matlab]
 # provider=ansible
-# frontend_groups=mdce_master,mdce_worker,ganglia_monitor,ganglia_master
+# frontend_groups=mdce_main,mdce_worker,ganglia_monitor,ganglia_main
 # worker_groups=mdce_worker,ganglia_monitor
 
 # [cluster/slurm]
@@ -795,7 +795,7 @@ compute_groups = slurm_worker
 
 # [setup/ansible-slurm]
 # provider=ansible
-# frontend_groups=slurm_master
+# frontend_groups=slurm_main
 # compute_groups=slurm_worker
 
 # [cluster/slurm]
@@ -866,7 +866,7 @@ compute_groups = slurm_worker
 #     CONFIG_SETUP_ANSIBLE_SLURM = '''
 # [setup/ansible-slurm]
 # provider=ansible
-# frontend_groups=slurm_master
+# frontend_groups=slurm_main
 # compute_groups=slurm_worker
 #     '''
 
@@ -979,20 +979,20 @@ compute_groups = slurm_worker
 #         The bug caused this configuration snippet:
 
 #         [setup/ansible]
-#         frontend_groups=slurm_master,ganglia_frontend
+#         frontend_groups=slurm_main,ganglia_frontend
 
 #         to lead to the following inventory file:
 
-#         [slurm_master,ganglia_frontend]
+#         [slurm_main,ganglia_frontend]
 #         frontend001 ...
 #         """
 #         cfg = minimal_configuration(self.cfgfile)
-#         cfg.set('setup/sp1', 'misc_groups', 'misc_master,misc_client')
+#         cfg.set('setup/sp1', 'misc_groups', 'misc_main,misc_client')
 #         with open(self.cfgfile, 'w') as fd:
 #             cfg.write(fd)
 #             config = Creator.fromConfig(self.cfgfile)
 #             setup = config.create_setup_provider('c1')
-#             self.assertEqual(setup.groups['misc'], ['misc_master', 'misc_client'])
+#             self.assertEqual(setup.groups['misc'], ['misc_main', 'misc_client'])
 
 #     def test_default_storage_options(self):
 #         cfg = minimal_configuration(self.cfgfile)

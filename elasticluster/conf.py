@@ -143,8 +143,8 @@ SCHEMA = {
         Optional('period_num'):str,
         Optional('is_auto_renew',default='false'):str,
         Optional('is_auto_pay',default='false'):str,    
-        Optional('master_on_cloud',default=True):boolean,
-    Optional('master_connect_ip'):str,        
+        Optional('main_on_cloud',default=True):boolean,
+    Optional('main_connect_ip'):str,        
         # allow other keys w/out restrictions
         Optional(str): str,
     },
@@ -467,10 +467,10 @@ def _arrange_config_tree(raw_config):
       return value ``C`` as ``C['login']['ubuntu']``.
 
     As an exception, subsections of a named cluster (e.g.,
-    ``[cluster/gridengine/qmaster]``) will be inserted as items in the
+    ``[cluster/gridengine/qmain]``) will be inserted as items in the
     ``'nodes'`` key of the named cluster. For example, key/value pairs read
-    from section ``[cluster/gridengine/qmaster]`` will be accessible as
-    ``C['cluster']['gridengine']['nodes']['qmaster']``.
+    from section ``[cluster/gridengine/qmain]`` will be accessible as
+    ``C['cluster']['gridengine']['nodes']['qmain']``.
     """
     tree = {}
     for sect_name, sect_items in raw_config.iteritems():
@@ -702,8 +702,8 @@ def _gather_node_kind_info(kind_name, cluster_name, cluster_conf):
             'login',
             'network_ids',
             'availability_zone',
-            'master_on_cloud',
-            'master_connect_ip',            
+            'main_on_cloud',
+            'main_connect_ip',            
             'charging_mode',
             'period_type',
             'period_num',
@@ -834,7 +834,7 @@ def _cross_validate_final_config(objtree, evict_on_error=True):
         if 'ssh_to' in cluster:
             ssh_to = cluster['ssh_to']
             try:
-                # extract node kind if this is a node name (e.g., `master001` => `master`)
+                # extract node kind if this is a node name (e.g., `main001` => `main`)
                 parts = NodeNamingPolicy.parse(ssh_to)
                 ssh_to = parts['kind']
             except ValueError:
@@ -1098,7 +1098,7 @@ class Creator(object):
             for key, value in (list(conf.items())
                                + list(self.cluster_conf[cluster_template].items()) + list(sfs_items)):
             # Set both group and global variables
-                for prefix in [(node_kind + '_var_'), "global_var_","sfs_","master_"]:
+                for prefix in [(node_kind + '_var_'), "global_var_","sfs_","main_"]:
                     if key.startswith(prefix):      
                         var = key.replace(prefix, '')
                         environment_vars[node_kind][var] = value

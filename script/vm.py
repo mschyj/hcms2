@@ -106,6 +106,6 @@ def init_ssh():
 
 if __name__ == "__main__":
   print ('This is main of module "vm.py"')
-  get_vm_ip("slurm-master001")
+  get_vm_ip("slurm-main001")
   #start_vm('all')
   #find_vm("slurm-frontend004")

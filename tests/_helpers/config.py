@@ -140,13 +140,13 @@ misc_groups = whatever
 
         'slurm_setup':"""
 provider = ansible
-master_groups = slurm_master
+main_groups = slurm_main
 worker_groups = slurm_worker
         """,
 
         'slurm_setup_old':"""
 provider = ansible
-frontend_groups = slurm_master
+frontend_groups = slurm_main
 compute_groups = slurm_worker
         """,
     },
@@ -287,7 +287,7 @@ _CONFIG_KV = {
             "security_group": "default",
             "setup": {
                 "compute_groups": "slurm_worker",
-                "frontend_groups": "slurm_master",
+                "frontend_groups": "slurm_main",
                 "playbook_path": "/home/rmurri/w/elasticluster/elasticluster/share/playbooks/site.yml",
                 "provider": "ansible"
             }
@@ -316,7 +316,7 @@ class Configuration(object):
                 "setup": {
                     "provider": "ansible",
                     "playbook_path": "%(ansible_pb_dir)s/site.yml",
-                    "frontend_groups": "slurm_master",
+                    "frontend_groups": "slurm_main",
                     "compute_groups": "slurm_worker",
                     },
                 "cloud": {
@@ -359,7 +359,7 @@ class Configuration(object):
                 "setup": {
                     "provider": "ansible",
                     "playbook_path": "%(ansible_pb_dir)s/site.yml",
-                    "frontend_groups": "slurm_master",
+                    "frontend_groups": "slurm_main",
                     "compute_groups": "slurm_worker",
                     },
                 "cloud": {

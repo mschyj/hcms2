@@ -465,10 +465,10 @@ def _arrange_config_tree(raw_config):
       return value ``C`` as ``C['login']['ubuntu']``.
 
     As an exception, subsections of a named cluster (e.g.,
-    ``[cluster/gridengine/qmaster]``) will be inserted as items in the
+    ``[cluster/gridengine/qmain]``) will be inserted as items in the
     ``'nodes'`` key of the named cluster. For example, key/value pairs read
-    from section ``[cluster/gridengine/qmaster]`` will be accessible as
-    ``C['cluster']['gridengine']['nodes']['qmaster']``.
+    from section ``[cluster/gridengine/qmain]`` will be accessible as
+    ``C['cluster']['gridengine']['nodes']['qmain']``.
     """
     tree = {}
     for sect_name, sect_items in raw_config.iteritems():
@@ -830,7 +830,7 @@ def _cross_validate_final_config(objtree, evict_on_error=True):
         if 'ssh_to' in cluster:
             ssh_to = cluster['ssh_to']
             try:
-                # extract node kind if this is a node name (e.g., `master001` => `master`)
+                # extract node kind if this is a node name (e.g., `main001` => `main`)
                 parts = NodeNamingPolicy.parse(ssh_to)
                 ssh_to = parts['kind']
             except ValueError:
